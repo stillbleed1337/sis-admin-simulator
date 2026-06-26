@@ -1,0 +1,18 @@
+/* style.css */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #1a1a1a; /* Темный фон вне игры */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden; /* Убираем случайные скроллбары */
+}
+
+#game-container {
+    position: relative;
+    width: 1280px; /* Ширина под твой дизайн */
+    height: 720px; /* Высота под твой дизайн */
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.8); /* Легкая тень для красоты */
+}
