@@ -161,8 +161,29 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
-        const board = this.add.rectangle(230, 220, 380, 250, 0xffffff).setInteractive({ useHandCursor: true });
-        this.add.text(230, 220, 'КАНБАН-ДОСКА', { font: '22px Arial', fill: '#000' }).setOrigin(0.5);
+       // --- КРАСИВАЯ КАНБАН-ДОСКА НА СТЕНЕ ---
+        
+        // 1. Тень от доски на стене (сдвинута чуть вправо и вниз, полупрозрачная)
+        this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
+        
+        // 2. Рамка доски (темно-серая/металлическая), она же будет кликабельной зоной
+        const board = this.add.rectangle(230, 220, 380, 250, 0x4a4a52).setInteractive({ useHandCursor: true });
+        
+        // 3. Внутренняя белая маркерная поверхность (чуть меньше рамки)
+        this.add.rectangle(230, 220, 360, 230, 0xf4f6f8); 
+        
+        // 4. Декорации: цветные стикеры, прилепленные в случайном порядке (для живости)
+        this.add.rectangle(120, 160, 30, 30, 0xffeb3b).setAngle(-15); // Желтый стикер
+        this.add.rectangle(160, 165, 30, 30, 0xff9800).setAngle(10);  // Оранжевый
+        this.add.rectangle(340, 280, 40, 25, 0x4caf50).setAngle(-5);  // Зеленая бумажка
+        
+        // 5. Текст по центру доски (стилизованный)
+        this.add.text(230, 220, 'КАНБАН-ДОСКА', { 
+            font: '24px Arial', 
+            fill: '#333d47', 
+            fontStyle: 'bold',
+            letterSpacing: 2
+        }).setOrigin(0.5);
 
         const book = this.add.rectangle(120, 600, 140, 100, 0x0055aa).setInteractive({ useHandCursor: true });
         this.add.text(120, 600, 'СПРАВОЧНИК', { font: '16px Arial', fill: '#fff' }).setOrigin(0.5);
@@ -170,8 +191,19 @@ class MainWorkspaceScene extends Phaser.Scene {
         const networkMap = this.add.rectangle(300, 600, 160, 120, 0xffffee).setInteractive({ useHandCursor: true });
         this.add.text(300, 600, 'СХЕМА СЕТИ', { font: '18px Arial', fill: '#000' }).setOrigin(0.5);
 
-        this.phoneObj = this.add.rectangle(1200, 620, 100, 180, 0x333333).setInteractive({ useHandCursor: true });
-        this.add.text(1200, 620, 'ТЕЛЕФОН', { font: '16px Arial', fill: '#fff' }).setOrigin(0.5);
+        // --- КРАСИВЫЙ СМАРТФОН НА СТОЛЕ ---
+        this.phoneObj = this.add.container(1200, 620);
+        
+        let phoneShadow = this.add.rectangle(5, 5, 100, 180, 0x000000, 0.3); // Тень
+        let phoneCase = this.add.rectangle(0, 0, 100, 180, 0x1c1c1e); // Темный корпус
+        let phoneScreen = this.add.rectangle(0, 0, 90, 160, 0x000000); // Экран
+        let phoneSpeaker = this.add.rectangle(0, -75, 30, 4, 0x333333); // Динамик сверху
+        let phoneIcon = this.add.text(0, 0, '💬', { font: '32px Arial' }).setOrigin(0.5); // Иконка уведомлений
+        
+        this.phoneObj.add([phoneShadow, phoneCase, phoneScreen, phoneSpeaker, phoneIcon]);
+        
+        // Делаем весь контейнер кликабельным
+        this.phoneObj.setSize(100, 180).setInteractive({ useHandCursor: true });
 
         this.phoneShake = this.tweens.add({ targets: this.phoneObj, angle: { from: -5, to: 5 }, duration: 50, yoyo: true, repeat: -1, paused: true });
 
@@ -459,75 +491,164 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
     createKanbanUI() {
         this.overlayKanban = this.add.container(640, 360).setDepth(100).setVisible(false);
+        
+        // Темный фон позади доски
         let bgK = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
-        let paper = this.add.rectangle(0, 0, 1000, 600, 0xe0e0e0);
-        let closeK = this.add.text(470, -270, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        // Кнопка закрытия
+        let closeK = this.add.text(520, -320, '✖', { font: '36px Arial', fill: '#ff0000' })
+            .setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeK.on('pointerdown', () => this.closeOverlay(this.overlayKanban));
         
-        let l1 = this.add.rectangle(-250, 0, 4, 600, 0x999999);
-        let l2 = this.add.rectangle(0, 0, 4, 600, 0x999999);
-        let l3 = this.add.rectangle(250, 0, 4, 600, 0x999999);
+        // 1. Вставляем HTML нашей верстки в виде строки
+        let kanbanHTML = `
+        <div class="kanban-board">
+            <div class="kanban-column" data-col="Очередь">
+                <div class="kanban-header">Очередь <span class="task-count">0</span></div>
+                <div class="kanban-tasks">
+                    <div class="kanban-task" id="task-1" style="display: none;">
+                        Задача 1:<br>Не работает 1С
+                    </div>
+                </div>
+            </div>
+            <div class="kanban-column" data-col="В работе">
+                <div class="kanban-header">В работе <span class="task-count">0</span></div>
+                <div class="kanban-tasks"></div>
+            </div>
+            <div class="kanban-column" data-col="Проверка">
+                <div class="kanban-header">Проверка <span class="task-count">0</span></div>
+                <div class="kanban-tasks"></div>
+            </div>
+            <div class="kanban-column" data-col="Готово">
+                <div class="kanban-header">Готово <span class="task-count">0</span></div>
+                <div class="kanban-tasks"></div>
+            </div>
+        </div>`;
 
-        let t1 = this.add.text(-375, -270, 'ОЧЕРЕДЬ', { font: '22px Arial', fill: '#333' }).setOrigin(0.5);
-        let t2 = this.add.text(-125, -270, 'В РАБОТЕ', { font: '22px Arial', fill: '#333' }).setOrigin(0.5);
-        let t3 = this.add.text(125, -270, 'ПРОВЕРКА', { font: '22px Arial', fill: '#333' }).setOrigin(0.5);
-        let t4 = this.add.text(375, -270, 'ГОТОВО', { font: '22px Arial', fill: '#333' }).setOrigin(0.5);
+        // 2. Создаем DOM элемент Phaser
+        this.kanbanDOM = this.add.dom(0, 0).createFromHTML(kanbanHTML);
 
-        this.taskSticker = this.add.container(-375, -150).setVisible(false);
-        let stickerBg = this.add.rectangle(0, 0, 200, 100, 0xffff88).setInteractive({ useHandCursor: true });
-        let stickerText = this.add.text(0, 0, 'Задача 1:\nНе работает 1С', { font: '18px Arial', fill: '#000', align: 'center' }).setOrigin(0.5);
-        this.taskSticker.add([stickerBg, stickerText]);
-
-        stickerBg.on('pointerdown', () => {
-            if (this.sysState.progress === 1) {
-                this.sysState.progress = 2; 
-                this.updateKanbanBoard();
-                this.guruStatus.setText('Гуру 🟢').setFill('#00ff00');
-                this.antiGuruStatus.setText('Анти-Гуру 🟢').setFill('#00ff00');
-                this.showToast('Задача в работе. Подсказки в чате разблокированы.');
+        // 3. Вешаем слушатель клика прямо на HTML-элемент стикера
+        this.kanbanDOM.addListener('click');
+        this.kanbanDOM.on('click', (event) => {
+            // Проверяем, кликнули ли мы по задаче
+            if (event.target.id === 'task-1' || event.target.closest('#task-1')) {
+                if (this.sysState.progress === 1) {
+                    this.sysState.progress = 2; 
+                    this.updateKanbanBoard();
+                    this.guruStatus.setText('Гуру 🟢').setFill('#00ff00');
+                    this.antiGuruStatus.setText('Анти-Гуру 🟢').setFill('#00ff00');
+                    this.showToast('Задача в работе. Подсказки в чате разблокированы.');
+                }
             }
         });
 
-        this.overlayKanban.add([bgK, paper, l1, l2, l3, t1, t2, t3, t4, closeK, this.taskSticker]);
+        // Добавляем все в контейнер (kanbanDOM встанет ровно по центру)
+        this.overlayKanban.add([bgK, this.kanbanDOM, closeK]);
     }
 
     updateKanbanBoard() {
-        if (this.sysState.progress >= 1) this.taskSticker.setVisible(true);
-        if (this.sysState.progress === 1) this.taskSticker.setPosition(-375, -150); 
-        if (this.sysState.progress === 2) this.taskSticker.setPosition(-125, -150); 
-        if (this.sysState.progress === 3) this.taskSticker.setPosition(125, -150);  
-        if (this.sysState.progress === 4) this.taskSticker.setPosition(375, -150);  
+        // Находим наш HTML-стикер
+        const task = document.getElementById('task-1');
+        if (!task) return;
+
+        // Показываем стикер, если прогресс начался
+        if (this.sysState.progress >= 1) {
+            task.style.display = 'block';
+        }
+
+        // Вызываем ту самую функцию из kanban.js, которую мы подключили!
+        if (this.sysState.progress === 1) moveTask(task, 'Очередь');
+        if (this.sysState.progress === 2) moveTask(task, 'В работе');
+        if (this.sysState.progress === 3) moveTask(task, 'Проверка');
+        if (this.sysState.progress === 4) moveTask(task, 'Готово');
     }
 
-    createMessengerUI() {
+ createMessengerUI() {
         this.overlayPhone = this.add.container(640, 360).setDepth(100).setVisible(false);
-        let bgPhone = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
         
-        let appBg = this.add.rectangle(0, 0, 1000, 600, 0x2b2b2b);
-        let leftPanel = this.add.rectangle(-350, 0, 300, 600, 0x1a1a1a);
-        let closePhone = this.add.text(470, -270, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        let bgPhone = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
+        
+        let appBg = this.add.rectangle(0, 0, 1000, 600, 0x0e1621); 
+        appBg.setStrokeStyle(1, 0x2b3e51); 
+        
+        let leftPanel = this.add.rectangle(-350, 0, 300, 600, 0x17212b); 
+        let chatHeaderBg = this.add.rectangle(150, -270, 700, 60, 0x17212b); 
+        
+        let closePhone = this.add.text(470, -270, '✖', { font: '24px Arial', fill: '#ff5555' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closePhone.on('pointerdown', () => this.closeOverlay(this.overlayPhone));
 
-        this.add.text(-470, -270, 'КОНТАКТЫ', { font: '20px Arial', fill: '#aaa' }).setOrigin(0, 0.5);
+        this.add.text(-480, -270, 'КОНТАКТЫ', { font: '14px Arial', fill: '#6ab2f2', fontStyle: 'bold' }).setOrigin(0, 0.5);
+        let line = this.add.rectangle(-350, -240, 300, 1, 0x242f3d);
         
-        this.guruStatus = this.add.text(-470, -200, 'Гуру ⚪', { font: '24px Arial', fill: '#888' }).setInteractive({ useHandCursor: true });
-        this.antiGuruStatus = this.add.text(-470, -150, 'Анти-Гуру ⚪', { font: '24px Arial', fill: '#888' }).setInteractive({ useHandCursor: true });
-        this.accStatus = this.add.text(-470, -100, 'Гл. Бухгалтер 🟢', { font: '24px Arial', fill: '#00ff00' }).setInteractive({ useHandCursor: true });
+        // ==========================================
+        // ФУНКЦИЯ-ГЕНЕРАТОР КРАСИВЫХ КОНТАКТОВ
+        // ==========================================
+        const createContact = (y, name, color, avatarColor, emoji) => {
+            // 1. Широкая плашка для клика (теперь легко попасть мышкой)
+            let bg = this.add.rectangle(-350, y, 300, 65, 0x17212b).setInteractive({ useHandCursor: true });
+            
+            // 2. Эффект наведения (Hover) как в десктопных приложениях
+            bg.on('pointerover', () => bg.setFillStyle(0x202b36)); 
+            bg.on('pointerout', () => bg.setFillStyle(0x17212b));
+            
+            // 3. Те самые аватарки, чтобы они совпадали с чатом
+            let avatarBg = this.add.circle(-455, y, 22, avatarColor);
+            let avatarIcon = this.add.text(-455, y, emoji, { font: '22px Arial' }).setOrigin(0.5);
+            
+            // 4. Текст контакта (сохраняем ссылку для игровой логики)
+            let statusText = this.add.text(-415, y, name, { font: '17px Arial', fill: color, fontStyle: 'bold' }).setOrigin(0, 0.5);
+            
+            // 5. Тонкая темная линия-разделитель между чатами
+            let separator = this.add.rectangle(-350, y + 32, 270, 1, 0x0e1621);
 
-        this.chatHeader = this.add.text(100, -270, 'Выберите чат', { font: '24px Arial', fill: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+            return { bg, avatarBg, avatarIcon, statusText, separator };
+        };
+
+        // --- СОЗДАЕМ СПИСОК ЧАТОВ ---
         
-        let chatHTML = '<div id="chat-body" style="width: 610px; height: 410px; overflow-y: auto; color: #fff; font-family: Arial; font-size: 18px; text-align: left; white-space: pre-wrap; padding-right: 10px; box-sizing: border-box;"></div>';
-        this.chatDOM = this.add.dom(785, 330).createFromHTML(chatHTML).setVisible(false);
+        let guru = createContact(-190, 'Гуру ⚪', '#888888', 0x4fc3f7, '🧙‍♂️');
+        this.guruStatus = guru.statusText; // Привязываем к твоему старому коду!
+        guru.bg.on('pointerdown', () => this.openChat('Гуру'));
 
-        this.chatNextBtn = this.add.text(100, 250, '[ ДАЛЕЕ ]', { font: '24px Arial', fill: '#ffff00' }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
+        let antiGuru = createContact(-125, 'Анти-Гуру ⚪', '#888888', 0xff8a65, '👾');
+        this.antiGuruStatus = antiGuru.statusText;
+        antiGuru.bg.on('pointerdown', () => this.openChat('Анти-Гуру'));
 
-        this.accStatus.on('pointerdown', () => this.openChat('Гл. Бухгалтер'));
-        this.guruStatus.on('pointerdown', () => this.openChat('Гуру'));
-        this.antiGuruStatus.on('pointerdown', () => this.openChat('Анти-Гуру'));
+        let acc = createContact(-60, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, '👩‍💼');
+        this.accStatus = acc.statusText;
+        acc.bg.on('pointerdown', () => this.openChat('Гл. Бухгалтер'));
 
-        this.overlayPhone.add([bgPhone, appBg, leftPanel, closePhone, this.guruStatus, this.antiGuruStatus, this.accStatus, this.chatHeader, this.chatNextBtn]);
+        // ==========================================
+
+        this.chatHeader = this.add.text(-170, -270, 'Выберите чат', { font: '20px Arial', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
+        
+        let chatHTML = `
+        <div id="chat-body" style="
+            width: 660px; height: 430px; overflow-y: auto; color: #e4e6eb; 
+            font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; line-height: 1.6;
+            padding: 10px 20px; box-sizing: border-box; text-align: left; white-space: pre-wrap;
+        "></div>
+        <style>
+            #chat-body::-webkit-scrollbar { width: 6px; }
+            #chat-body::-webkit-scrollbar-track { background: transparent; }
+            #chat-body::-webkit-scrollbar-thumb { background-color: #2b5278; border-radius: 3px; }
+        </style>`;
+        this.chatDOM = this.add.dom(790, 340).createFromHTML(chatHTML).setVisible(false);
+
+        this.chatNextBtn = this.add.text(150, 250, '➤ ДАЛЕЕ', { 
+            font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
+
+        // ВАЖНО: Мы добавляем в оверлей все сгенерированные кусочки контактов
+        this.overlayPhone.add([
+            bgPhone, appBg, leftPanel, chatHeaderBg, line, closePhone, 
+            guru.bg, guru.avatarBg, guru.avatarIcon, guru.statusText, guru.separator,
+            antiGuru.bg, antiGuru.avatarBg, antiGuru.avatarIcon, antiGuru.statusText, antiGuru.separator,
+            acc.bg, acc.avatarBg, acc.avatarIcon, acc.statusText, acc.separator,
+            this.chatHeader, this.chatNextBtn
+        ]);
     }
-
     openChat(contactName) {
         this.activeContact = contactName;
         this.chatHeader.setText(contactName);
@@ -544,12 +665,80 @@ class MainWorkspaceScene extends Phaser.Scene {
         let element = document.getElementById('chat-body');
         if (!element) return;
 
-        let txt = data.history || (data.queue.length === 0 && !data.hintBought ? 'Сообщений пока нет.' : '');
-        element.innerText = txt;
+        let htmlContent = '';
+        
+        if (!data.history && data.queue.length === 0 && !data.hintBought) {
+            htmlContent = '<div style="text-align: center; color: #8b9eb0; margin-top: 50px; font-style: italic;">Сообщений пока нет...</div>';
+        } else if (data.history) {
+            let messages = data.history.split('\n\n');
+            
+            messages.forEach(msg => {
+                if (!msg.trim()) return;
+                
+                let isOutgoing = msg.startsWith('Админ:');
+                let isSystem = msg.startsWith('['); 
+                
+                // Выделяем чистый текст и имя отправителя
+                let text = msg;
+                let senderName = '';
+                if (!isSystem) {
+                    let splitIndex = msg.indexOf(': ');
+                    if (splitIndex !== -1) {
+                        senderName = msg.substring(0, splitIndex);
+                        text = msg.substring(splitIndex + 2); 
+                    }
+                }
+
+                // Убираем случайные пробелы по краям
+                text = text.trim();
+
+                // --- НАСТРОЙКА АВАТАРОК-ЗАГЛУШЕК ---
+                let avatarIcon = '👤';
+                let avatarColor = '#555555';
+                
+                if (senderName === 'Гл. Бухгалтер') { avatarIcon = '👩‍💼'; avatarColor = '#e57373'; }
+                else if (senderName === 'Гуру') { avatarIcon = '🧙‍♂️'; avatarColor = '#4fc3f7'; }
+                else if (senderName === 'Анти-Гуру') { avatarIcon = '👾'; avatarColor = '#ff8a65'; }
+
+                if (isSystem) {
+                    htmlContent += `
+                    <div style="text-align: center; margin: 15px 0;">
+                        <span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span>
+                    </div>`;
+                } else if (isOutgoing) {
+                    // --- СООБЩЕНИЕ ИГРОКА ---
+                    // ОБРАТИ ВНИМАНИЕ: ${text} теперь вплотную к тегам <div>
+                    htmlContent += `
+                    <div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 12px;">
+                        <div style="background: #2b5278; color: #fff; padding: 10px 14px; border-radius: 14px 14px 0 14px; max-width: 65%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); word-wrap: break-word; overflow-wrap: break-word;">${text}</div>
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 10px; flex-shrink: 0; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">👨‍💻</div>
+                    </div>`;
+                } else {
+                    // --- СООБЩЕНИЕ NPC ---
+                    // ОБРАТИ ВНИМАНИЕ: ${text} теперь вплотную к тегам <div>
+                    htmlContent += `
+                    <div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 12px;">
+                        <div style="width: 36px; height: 36px; border-radius: 50%; background: ${avatarColor}; display: flex; justify-content: center; align-items: center; margin-right: 10px; flex-shrink: 0; font-size: 18px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">${avatarIcon}</div>
+                        <div style="background: #182533; color: #e4e6eb; padding: 10px 14px; border-radius: 14px 14px 14px 0; max-width: 65%; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.15); border: 1px solid #22303f; word-wrap: break-word; overflow-wrap: break-word;">${text}</div>
+                    </div>`;
+                }
+            });
+        }
+
+        if ((this.activeContact === 'Гуру' || this.activeContact === 'Анти-Гуру') && this.sysState.progress === 2 && !data.hintBought && data.queue.length === 0) {
+            htmlContent += `
+            <div style="text-align: center; margin: 20px 0;">
+                <span style="background: rgba(227, 192, 104, 0.1); border: 1px solid rgba(227, 192, 104, 0.3); padding: 8px 16px; border-radius: 12px; font-size: 13px; color: #e3c068; display: inline-block;">
+                    Системное сообщение: Хотите получить подсказку?<br>(Спишется баллов: ${this.activeContact === 'Гуру' ? '10' : '5'})
+                </span>
+            </div>`;
+        }
+
+        element.innerHTML = htmlContent;
         element.scrollTop = element.scrollHeight; 
 
         if (data.queue.length > 0) {
-            this.chatNextBtn.setText('[ ДАЛЕЕ ]').setVisible(true);
+            this.chatNextBtn.setText('➤ ДАЛЕЕ').setVisible(true);
             this.chatNextBtn.removeAllListeners('pointerdown');
             
             this.chatNextBtn.on('pointerdown', () => {
@@ -564,10 +753,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         } 
         else {
             if ((this.activeContact === 'Гуру' || this.activeContact === 'Анти-Гуру') && this.sysState.progress === 2 && !data.hintBought) {
-                element.innerText = data.history + (data.history ? '\n\n' : '') + 'Системное сообщение: Хотите получить подсказку?\n(Спишется баллов: ' + (this.activeContact === 'Гуру' ? '10' : '5') + ')';
-                element.scrollTop = element.scrollHeight;
-                
-                this.chatNextBtn.setText('[ КУПИТЬ ПОДСКАЗКУ ]').setVisible(true);
+                this.chatNextBtn.setText('💡 КУПИТЬ ПОДСКАЗКУ').setVisible(true);
                 this.chatNextBtn.removeAllListeners('pointerdown');
                 this.chatNextBtn.on('pointerdown', () => {
                     data.hintBought = true; 

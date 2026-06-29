@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Канбан-доска Сисадмина</title>
+    <link rel="stylesheet" href="kanban.css">
+</head>
+<body>
+
+    <div class="kanban-board">
+        
+        <div class="kanban-column" data-col="Очередь">
+            <div class="kanban-header">Очередь <span class="task-count">1</span></div>
+            <div class="kanban-tasks">
+                <div class="kanban-task" id="task-1">
+                    Задача 1:<br>Не работает 1С
+                </div>
+            </div>
+        </div>
+
+        <div class="kanban-column" data-col="В работе">
+            <div class="kanban-header">В работе <span class="task-count">0</span></div>
+            <div class="kanban-tasks"></div>
+        </div>
+
+        <div class="kanban-column" data-col="Проверка">
+            <div class="kanban-header">Проверка <span class="task-count">0</span></div>
+            <div class="kanban-tasks"></div>
+        </div>
+
+        <div class="kanban-column" data-col="Готово">
+            <div class="kanban-header">Готово <span class="task-count">0</span></div>
+            <div class="kanban-tasks"></div>
+        </div>
+
+    </div>
+
+    <script src="kanban.js"></script>
+</body>
+</html>

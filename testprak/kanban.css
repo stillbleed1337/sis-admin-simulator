@@ -1,0 +1,87 @@
+
+/* Главная доска: Эффект матового стекла */
+.kanban-board {
+    width: 1000px;
+    height: 600px;
+    /* Полупрозрачный белый фон */
+    background: rgba(255, 255, 255, 0.75); 
+    /* Главная магия: размытие того, что находится позади доски */
+    backdrop-filter: blur(16px); 
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: 16px; /* Более мягкие, современные скругления */
+    display: flex;
+    gap: 16px;
+    padding: 24px;
+    box-sizing: border-box;
+    /* Многослойная тень для парения + внутренний белый блик для объема */
+    box-shadow: 
+        0 24px 48px rgba(0, 0, 0, 0.2), 
+        inset 0 0 0 1px rgba(255, 255, 255, 0.6); 
+    /* Тонкая рамка по внешнему контуру */
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Колонки: Делаем их тоже слегка прозрачными, чтобы поддержать стиль */
+.kanban-column {
+    flex: 1; 
+    background-color: rgba(244, 246, 248, 0.6);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Заголовок колонки */
+.kanban-header {
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #333d47; 
+    /* Легкий градиент для объема шапки колонки */
+    background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(244,246,248,0.4) 100%);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    letter-spacing: 0.5px;
+}
+
+/* Счетчик задач (деталь для красоты UI) */
+.kanban-header .task-count {
+    background-color: #3b3b4d;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #fff;
+}
+
+/* Зона для карточек (скроллится, если задач много) */
+.kanban-tasks {
+    flex: 1;
+    padding: 12px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Желтый стикер-задача */
+.kanban-task {
+    background-color: #ffeb3b; /* Классический желтый стикер */
+    color: #222; /* Темный текст для контраста */
+    padding: 14px;
+    border-radius: 4px;
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.4;
+    box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.2);
+    border-left: 4px solid #fbc02d; /* Акцентная полоска */
+    transition: transform 0.2s ease;
+}
+
+/* Небольшая анимация при наведении (опционально) */
+.kanban-task:hover {
+    transform: translateY(-2px);
+}
