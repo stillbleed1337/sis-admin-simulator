@@ -161,29 +161,32 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
-       // --- КРАСИВАЯ КАНБАН-ДОСКА НА СТЕНЕ ---
+       // --- ПРОДВИНУТАЯ КАНБАН-ДОСКА НА СТЕНЕ ---
+        this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); // Тень
         
-        // 1. Тень от доски на стене (сдвинута чуть вправо и вниз, полупрозрачная)
-        this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
+        // ВАЖНО: Мы сохранили переменную const board, чтобы клик по ней продолжал работать
+        const board = this.add.rectangle(230, 220, 380, 250, 0x3a3f44).setInteractive({ useHandCursor: true });
+        this.add.rectangle(230, 220, 360, 230, 0xffffff); // Белый фон
         
-        // 2. Рамка доски (темно-серая/металлическая), она же будет кликабельной зоной
-        const board = this.add.rectangle(230, 220, 380, 250, 0x4a4a52).setInteractive({ useHandCursor: true });
-        
-        // 3. Внутренняя белая маркерная поверхность (чуть меньше рамки)
-        this.add.rectangle(230, 220, 360, 230, 0xf4f6f8); 
-        
-        // 4. Декорации: цветные стикеры, прилепленные в случайном порядке (для живости)
-        this.add.rectangle(120, 160, 30, 30, 0xffeb3b).setAngle(-15); // Желтый стикер
-        this.add.rectangle(160, 165, 30, 30, 0xff9800).setAngle(10);  // Оранжевый
-        this.add.rectangle(340, 280, 40, 25, 0x4caf50).setAngle(-5);  // Зеленая бумажка
-        
-        // 5. Текст по центру доски (стилизованный)
-        this.add.text(230, 220, 'КАНБАН-ДОСКА', { 
-            font: '24px Arial', 
-            fill: '#333d47', 
-            fontStyle: 'bold',
-            letterSpacing: 2
-        }).setOrigin(0.5);
+        // Разделители колонок
+        this.add.rectangle(140, 220, 2, 230, 0xe0e6ed); 
+        this.add.rectangle(230, 220, 2, 230, 0xe0e6ed); 
+        this.add.rectangle(320, 220, 2, 230, 0xe0e6ed); 
+
+        // Имитация заголовков колонок
+        this.add.rectangle(95, 120, 76, 14, 0xf0f2f5);
+        this.add.rectangle(185, 120, 76, 14, 0xf0f2f5);
+        this.add.rectangle(275, 120, 76, 14, 0xf0f2f5);
+        this.add.rectangle(365, 120, 76, 14, 0xf0f2f5);
+
+        // Стикеры с задачами
+        this.add.rectangle(95, 150, 70, 28, 0xffeb3b).setAngle(-2); 
+        this.add.rectangle(95, 185, 70, 28, 0xffeb3b).setAngle(1);  
+        this.add.rectangle(185, 155, 70, 28, 0x4fc3f7).setAngle(3); 
+        this.add.rectangle(275, 145, 70, 28, 0xffb74d).setAngle(-1); 
+        this.add.rectangle(365, 150, 70, 28, 0x81c784).setAngle(2);  
+        this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
+        this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
 
         const book = this.add.rectangle(120, 600, 140, 100, 0x0055aa).setInteractive({ useHandCursor: true });
         this.add.text(120, 600, 'СПРАВОЧНИК', { font: '16px Arial', fill: '#fff' }).setOrigin(0.5);
