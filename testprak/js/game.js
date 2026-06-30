@@ -227,7 +227,7 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     startWorkingDay() {
-        this.time.delayedCall(1000, () => this.showToast('💬 Вы: Фух, начался рабочий день...'));
+        this.time.delayedCall(1000, () => this.showToast('💬 Вы: Фух, начался первый рабочий день...'));
         this.time.delayedCall(4500, () => this.showToast('💬 Вы: Надо бы заглянуть в справочник.'));
     }
 
