@@ -1,46 +1,30 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link rel="stylesheet" href="kanban.css">
-    <script src="kanban.js"></script>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Симулятор Сисадмина</title>
     
-    <!-- 1. Подключаем стили (дизайн) для терминала xterm.js -->
+    <!-- Подключаем терминал xterm (с CDN) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css" />
     
-    <style>
-        /* Убираем лишние белые рамки по краям экрана и делаем фон вокруг черным */
-        body { 
-            margin: 0; 
-            padding: 0; 
-            background: #000; 
-            overflow: hidden; 
-        }
-        
-        /* Центрируем нашу игру ровно по центру экрана */
-        #game-container { 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            height: 100vh; 
-        }
-    </style>
+    <!-- Наши стили из папки css -->
+    <link rel="stylesheet" href="css/style.css" />
+    <link rel="stylesheet" href="css/kanban.css" />
 </head>
 <body>
-
-    <!-- В этот невидимый ящик Phaser сам встроит нашу игру -->
     <div id="game-container"></div>
     
-    <!-- 2. Подключаем сам игровой движок Phaser -->
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
-    
-    <!-- 3. Подключаем скрипт (логику) терминала xterm.js -->
+    <!-- 1. Библиотеки -->
+    <script src="lib/phaser.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
     
-    <!-- 4. Наш собственный код игры (обязательно должен быть в самом конце!) -->
-    <script src="game.js"></script>
+    <!-- 2. Наши скрипты (ПОРЯДОК ОЧЕНЬ ВАЖЕН!) -->
+    <!-- Сначала грузим конфиг, потом инструменты, и только в конце саму игру -->
+    <script src="js/config.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/kanban.js"></script>
     
+    <!-- game.js всегда последний! -->
+    <script src="js/game.js"></script>
 </body>
 </html>
