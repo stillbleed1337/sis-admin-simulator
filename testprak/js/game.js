@@ -179,11 +179,78 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
         this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
 
-        const book = this.add.rectangle(120, 600, 140, 100, 0x0055aa).setInteractive({ useHandCursor: true });
-        this.add.text(120, 600, 'СПРАВОЧНИК', { font: '16px Arial', fill: '#fff' }).setOrigin(0.5);
+        // === УЛУЧШЕННЫЕ КНОПКИ (Справочник и Схема сети) ===
+        // Вспомогательная функция для создания красивых интерактивных кнопок
+        const createUIButton = (x, y, width, height, bgColor, text, iconEmoji, textColor) => {
+            const container = this.add.container(x, y);
 
-        const networkMap = this.add.rectangle(300, 600, 160, 120, 0xffffee).setInteractive({ useHandCursor: true });
-        this.add.text(300, 600, 'СХЕМА СЕТИ', { font: '18px Arial', fill: '#000' }).setOrigin(0.5);
+            // 1. Отрисовка тени со скруглениями
+            const shadow = this.add.graphics();
+            shadow.fillStyle(0x000000, 0.4);
+            shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
+
+            // 2. Отрисовка основного фона кнопки
+            const bg = this.add.graphics();
+            const drawBg = (strokeAlpha) => {
+                bg.clear();
+                bg.fillStyle(bgColor, 1);
+                bg.lineStyle(2, 0xffffff, strokeAlpha); // Полупрозрачная обводка
+                bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
+                bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+            };
+            drawBg(0.2); // Изначальная прозрачность обводки
+
+            // 3. Контент кнопки (Иконка и текст)
+            const icon = this.add.text(0, -15, iconEmoji, { font: '32px Arial' }).setOrigin(0.5);
+            const labelText = this.add.text(0, 25, text, { 
+                font: 'bold 15px Arial', 
+                fill: textColor 
+            }).setOrigin(0.5);
+
+            container.add([shadow, bg, icon, labelText]);
+            
+            // 4. Настройка хитбокса (интерактивной зоны)
+            const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+            container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+            container.input.cursor = 'pointer';
+
+            // --- Анимации (Game Juice) ---
+            
+            // При наведении мыши (Hover)
+            container.on('pointerover', () => {
+                this.tweens.add({ targets: container, y: y - 5, duration: 150, ease: 'Power2' });
+                drawBg(0.8); // Подсвечиваем рамку
+            });
+
+            // Когда мышь уходит (Mouse out)
+            container.on('pointerout', () => {
+                this.tweens.add({ targets: container, y: y, duration: 150, ease: 'Power2' });
+                drawBg(0.2); // Возвращаем рамку в исходное состояние
+            });
+
+            // Эффект нажатия (Active / Pointer down)
+            container.on('pointerdown', () => {
+                container.setScale(0.95);
+                shadow.clear();
+                shadow.fillStyle(0x000000, 0.2); // Тень становится светлее
+                shadow.fillRoundedRect(-width / 2 + 2, -height / 2 + 2, width, height, 12); // Тень прижимается
+            });
+
+            // Отпускание кнопки (Pointer up)
+            container.on('pointerup', () => {
+                container.setScale(1);
+                shadow.clear();
+                shadow.fillStyle(0x000000, 0.4);
+                shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
+            });
+
+            return container;
+        };
+
+        // Создаем обновленные кнопки (я немного сдвинул их для идеального выравнивания)
+        const book = createUIButton(130, 600, 140, 100, 0x1d4ed8, 'СПРАВОЧНИК', '📘', '#ffffff');
+        const networkMap = createUIButton(310, 600, 160, 120, 0xf8fafc, 'СХЕМА СЕТИ', '🗺️', '#0f172a');
+        // ========================================================
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
@@ -283,13 +350,205 @@ class MainWorkspaceScene extends Phaser.Scene {
         closeMap.on('pointerdown', () => this.closeOverlay(this.overlayMap));
         this.overlayMap.add([bgMap, this.add.rectangle(0, 0, 900, 600, 0xffffee), this.add.text(0, 0, '[ ТУТ БУДЕТ КАРТИНКА СХЕМЫ ]', { font: '32px Arial', fill: '#aaaaaa' }).setOrigin(0.5), closeMap]);
 
+        // === УЛУЧШЕННОЕ ОКНО СПРАВОЧНИКА (HTML-верстка) ===
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
-        let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
-        let closeBook = this.add.text(320, -220, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeBook.on('pointerdown', () => this.closeOverlay(this.overlayBook));
-        let bookStr = 'СПРАВОЧНИК СИСАДМИНА\n\nПРАВИЛА ИГРЫ:\n1. Получайте задачи в мессенджере.\n2. Перемещайте задачи по Канбан-доске.\n3. Решайте инциденты через терминал.\n\nПОДСКАЗКИ КОЛЛЕГ:\n• Жорик - весельчак и душа компании, шарит\nв компах, но раздолбай (Штраф: 5 баллов).\n• Магистр - строгий профи, мастер\nсвоего дела (Штраф: 10 баллов).';
-        this.overlayBook.add([bgBook, this.add.rectangle(0, 0, 700, 500, 0xffffff), this.add.text(0, 0, bookStr, { font: '24px Arial', fill: '#000', align: 'center' }).setOrigin(0.5), closeBook]);
+        
+        // Затемняющий фон заднего плана
+        let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
+        // HTML-структура и встроенные стили для Справочника
+        let bookHTML = `
+        <style>
+            .book-window {
+                width: 760px;
+                height: 520px;
+                background: #141b24;
+                border: 2px solid #2b5278;
+                border-radius: 12px;
+                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #e4e6eb;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                user-select: none;
+                text-align: left;
+            }
+            .book-header {
+                background: #17212b;
+                padding: 14px 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                border-bottom: 1px solid #242f3d;
+            }
+            .book-title {
+                font-size: 18px;
+                font-weight: bold;
+                color: #6ab2f2;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .book-close-btn {
+                color: #ff5555;
+                font-size: 22px;
+                cursor: pointer;
+                transition: transform 0.15s ease, color 0.15s ease;
+                line-height: 1;
+            }
+            .book-close-btn:hover {
+                transform: scale(1.2);
+                color: #ff7777;
+            }
+            .book-content {
+                padding: 25px;
+                overflow-y: auto;
+                flex: 1;
+            }
+            /* Кастомный скроллбар в стиле интерфейса */
+            .book-content::-webkit-scrollbar {
+                width: 8px;
+            }
+            .book-content::-webkit-scrollbar-track {
+                background: #0e1621;
+            }
+            .book-content::-webkit-scrollbar-thumb {
+                background: #242f3d;
+                border-radius: 4px;
+            }
+            .book-content::-webkit-scrollbar-thumb:hover {
+                background: #2b5278;
+            }
+            .book-section {
+                background: #182533;
+                border-left: 4px solid #2b5278;
+                padding: 16px;
+                border-radius: 0 8px 8px 0;
+                margin-bottom: 24px;
+                border: 1px solid #22303f;
+                border-left: 4px solid #6ab2f2;
+            }
+            .book-section h3 {
+                margin-top: 0;
+                margin-bottom: 12px;
+                color: #ffffff;
+                font-size: 18px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+            .book-list {
+                margin: 0;
+                padding-left: 20px;
+                line-height: 1.6;
+            }
+            .book-list li {
+                margin-bottom: 10px;
+                color: #ced4da;
+            }
+            .book-list strong {
+                color: #6ab2f2;
+            }
+            .colleague-card {
+                display: flex;
+                align-items: center;
+                background: #0e1621;
+                padding: 14px;
+                border-radius: 8px;
+                margin-bottom: 12px;
+                border: 1px solid #242f3d;
+            }
+            .colleague-avatar {
+                font-size: 32px;
+                margin-right: 16px;
+                background: #17212b;
+                width: 48px;
+                height: 48px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border-radius: 50%;
+                flex-shrink: 0;
+            }
+            .colleague-info {
+                flex: 1;
+            }
+            .colleague-info h4 {
+                margin: 0 0 6px 0;
+                font-size: 16px;
+                color: #ffffff;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .colleague-info p {
+                margin: 0;
+                font-size: 14px;
+                color: #94a3b8;
+                line-height: 1.4;
+            }
+            .badge-penalty {
+                background: rgba(239, 68, 68, 0.15);
+                color: #ff5555;
+                padding: 3px 8px;
+                border-radius: 6px;
+                font-size: 12px;
+                font-weight: bold;
+                border: 1px solid rgba(239, 68, 68, 0.3);
+            }
+        </style>
+        <div class="book-window">
+            <div class="book-header">
+                <div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div>
+                <div class="book-close-btn" id="book-close-x">✖</div>
+            </div>
+            <div class="book-content">
+                <div class="book-section">
+                    <h3>🎮 ПРАВИЛА ИГРЫ</h3>
+                    <ol class="book-list">
+                        <li><strong>Получайте задачи:</strong> Следите за входящими сообщениями от сотрудников в мессенджере.</li>
+                        <li><strong>Управляйте Канбан-доской:</strong> Обязательно переносите новые задачи в работу, чтобы разблокировать подсказки.</li>
+                        <li><strong>Решайте инциденты:</strong> Проводите диагностику сетей и серверов через Linux-терминал.</li>
+                    </ol>
+                </div>
+                
+                <div class="book-section" style="border-left-color: #ff8a65;">
+                    <h3>🧙‍♂️ ПОДСКАЗКИ КОЛЛЕГ</h3>
+                    
+                    <div class="colleague-card">
+                        <div class="colleague-avatar">👾</div>
+                        <div class="colleague-info">
+                            <h4>Жорик <span class="badge-penalty">Штраф: 5 баллов</span></h4>
+                            <p>Весельчак и душа компании. Отлично шарит в компьютерах, но жуткий раздолбай. Его советы простые, но могут быть поверхностными.</p>
+                        </div>
+                    </div>
+
+                    <div class="colleague-card">
+                        <div class="colleague-avatar">🧙‍♂️</div>
+                        <div class="colleague-info">
+                            <h4>Магистр <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Штраф: 10 баллов</span></h4>
+                            <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть. Его подсказки — это стопроцентное и глубокое решение инцидента.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+        // Создаем DOM-элемент окна
+        this.bookDOM = this.add.dom(0, 0).createFromHTML(bookHTML);
+
+        // Слушатель клика на крестик закрытия внутри HTML
+        this.bookDOM.addListener('click');
+        this.bookDOM.on('click', (event) => {
+            if (event.target.id === 'book-close-x') {
+                this.closeOverlay(this.overlayBook);
+            }
+        });
+
+        // Собираем контейнер (DOM элемент центрируется автоматически внутри контейнера)
+        this.overlayBook.add([bgBook, this.bookDOM]);
+        // ==========================================================
         this.createMessengerUI();
         this.createKanbanUI();
     }
