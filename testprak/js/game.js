@@ -4,20 +4,47 @@
 
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
-    create() { this.scene.start('IntroScene'); }
+
+    preload() {
+        // Переносим загрузку сюда, чтобы Phaser успел подготовить текстуры
+        this.load.image('blue2', 'assets/images/blue2.png');
+        this.load.image('blue', 'assets/images/blue.png');
+        this.load.image('orange', 'assets/images/orange.png');
+        this.load.image('orange2', 'assets/images/orange2.png');
+        this.load.image('brown', 'assets/images/brown.png');
+        this.load.image('brown2', 'assets/images/brown2.png');
+        this.load.image('green', 'assets/images/green.png');
+        this.load.image('green2', 'assets/images/green2.png');
+        
+        this.load.image('stol', 'assets/images/stol.png');
+        this.load.image('desktop_bg', 'assets/desktop_wallpaper.png');
+    }
+
+    create() { 
+        // Загрузка завершена — переходим к тесту
+        this.scene.start('IntroScene'); 
+    }
 }
 
 class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     
     create() {
-        this.cameras.main.setBackgroundColor(GAME_CONFIG.COLORS.bg);
+        // Отображаем фоновую картинку стола на весь экран
+        this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
+
+        // ИСПРАВЛЕНИЕ: Жёстко связываем буквы (жилы кабеля) с правильными цветами картинок мороженого
         this.wires = [
-            { id: 'wo', name: 'БО', color: 0xffcc99 }, { id: 'o',  name: 'О',  color: 0xff8800 },
-            { id: 'wg', name: 'БЗ', color: 0xccffcc }, { id: 'b',  name: 'С',  color: 0x0066ff },
-            { id: 'wb', name: 'БС', color: 0x99ccff }, { id: 'g',  name: 'З',  color: 0x009900 },
-            { id: 'wbr',name: 'БК', color: 0xd2b48c }, { id: 'br', name: 'К',  color: 0x8b4513 }
+            { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
+            { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
+            { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
+            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue
+            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue2
+            { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
+            { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
+            { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
         ];
+        
         this.solutionT568B = ['wo', 'o', 'wg', 'b', 'wb', 'g', 'wbr', 'br'];
         this.solutionT568A = ['wg', 'g', 'wo', 'b', 'wb', 'o', 'wbr', 'br'];
 
@@ -33,8 +60,8 @@ class IntroScene extends Phaser.Scene {
         skipBtn.on('pointerdown', () => { this.scene.start('MainWorkspaceScene', { currentScore: this.score }); });
 
         this.add.text(640, 60, 'ПРОВЕРКА КВАЛИФИКАЦИИ', { font: '32px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
-        this.add.text(640, 100, 'В какой последовательности вы порекомендуете мороженое друзьям?', { font: '22px Arial', fill: '#222222', fontStyle: 'bold' }).setOrigin(0.5);
-        this.selectionText = this.add.text(640, 560, 'Ваш выбор: ', { font: '24px Courier', fill: '#000000', fontStyle: 'bold' }).setOrigin(0.5);
+        this.add.text(640, 100, 'В какой последовательности вы порекомендуете мороженое друзьям?', { font: '22px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }).setOrigin(0.5);
+        this.selectionText = this.add.text(640, 560, 'Ваш выбор: ', { font: '24px Courier', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }).setOrigin(0.5);
         this.statusText = this.add.text(640, 640, '', { font: '26px Arial', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
 
         this.createDialogUI();
@@ -77,20 +104,35 @@ class IntroScene extends Phaser.Scene {
         this.playerSelection = []; this.selectionText.setText('Ваш выбор: '); this.statusText.setText(''); this.isLocked = false; 
         this.interactiveItems.forEach(item => item.destroy()); this.interactiveItems = [];
         let shuffled = [...this.wires].sort(() => Math.random() - 0.5);
-        const startX = 230; const spacing = 115;
+        
+        // Корректируем координаты:
+        // startX = 190 (сдвигаем левее, чтобы ряд был по центру)
+        // spacing = 125 (делаем расстояние чуть больше, так как картинки шире)
+        const startX = 150; const spacing = 140;
+        
+        // Опускаем Y с 360 до 560, чтобы мороженое встало точно на серую полку стола
+        const targetY = 450; 
 
         shuffled.forEach((wire, index) => {
-            let container = this.add.container(startX + (index * spacing), 360);
-            let cup = this.add.rectangle(0, 40, 60, 60, 0xcccccc);
-            let scoop = this.add.circle(0, -10, 40, wire.color);
-            let hitArea = this.add.rectangle(0, 15, 80, 120, 0x000000, 0).setInteractive({ useHandCursor: true });
-            let label = this.add.text(0, -90, wire.name, { font: '20px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
-            container.add([cup, scoop, hitArea, label]);
+            let container = this.add.container(startX + (index * spacing), targetY);
+            
+            // Загружаем спрайт
+            let iceCream = this.add.image(0, 0, wire.texture);
+            
+            // ИСПРАВЛЕНИЕ: Делаем размер пропорциональным (например, 100x100 пикселей), чтобы картинку не сплющивало
+            iceCream.setDisplaySize(185, 185);
+            
+            // Интерактивная зона теперь тоже квадратная под размер картинки
+            let hitArea = this.add.rectangle(0, 0, 185, 185, 0x000000, 0).setInteractive({ useHandCursor: true });
+            
+            // ИСПРАВЛЕНИЕ: Сдвигаем текстовую подпись чуть выше (на -70), чтобы она аккуратно висела над стаканчиком
+            let label = this.add.text(0, -110, wire.name, { font: 'bold 20px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
+            
+            container.add([iceCream, hitArea, label]);
             this.interactiveItems.push(container);
             hitArea.on('pointerdown', () => this.handleSelection(wire, container));
         });
     }
-
     handleSelection(wire, container) {
         if (this.isLocked) return; 
         const index = this.playerSelection.indexOf(wire.id);
