@@ -16,3 +16,124 @@ body {
     height: 720px; /* Высота под твой дизайн */
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.8); /* Легкая тень для красоты */
 }
+/* ========================================== */
+/* СТИЛИ ДЛЯ СПРАВОЧНИКА                      */
+/* ========================================== */
+
+.book-window { 
+    width: 760px; 
+    height: 520px; 
+    background: #141b24; 
+    border: 2px solid #2b5278; 
+    border-radius: 12px; 
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8); 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    color: #e4e6eb; 
+    display: flex; 
+    flex-direction: column; 
+    overflow: hidden; 
+    user-select: none; 
+    text-align: left; 
+}
+.book-header { 
+    background: #17212b; 
+    padding: 14px 20px; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    border-bottom: 1px solid #242f3d; 
+}
+.book-title { 
+    font-size: 18px; 
+    font-weight: bold; 
+    color: #6ab2f2; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+.book-close-btn { 
+    color: #ff5555; 
+    font-size: 22px; 
+    cursor: pointer; 
+    transition: transform 0.15s ease, color 0.15s ease; 
+    line-height: 1; 
+}
+.book-close-btn:hover { 
+    transform: scale(1.2); 
+    color: #ff7777; 
+}
+.book-content { 
+    padding: 25px; 
+    overflow-y: auto; 
+    flex: 1; 
+}
+.book-content::-webkit-scrollbar { width: 8px; }
+.book-content::-webkit-scrollbar-track { background: #0e1621; }
+.book-content::-webkit-scrollbar-thumb { background: #242f3d; border-radius: 4px; }
+.book-content::-webkit-scrollbar-thumb:hover { background: #2b5278; }
+.book-section { 
+    background: #182533; 
+    border-left: 4px solid #2b5278; 
+    padding: 16px; 
+    border-radius: 0 8px 8px 0; 
+    margin-bottom: 24px; 
+    border: 1px solid #22303f; 
+    border-left: 4px solid #6ab2f2; 
+}
+.book-section h3 { 
+    margin-top: 0; 
+    margin-bottom: 12px; 
+    color: #ffffff; 
+    font-size: 18px; 
+    display: flex; 
+    align-items: center; 
+    gap: 8px; 
+}
+.book-list { margin: 0; padding-left: 20px; line-height: 1.6; }
+.book-list li { margin-bottom: 10px; color: #ced4da; }
+.book-list strong { color: #6ab2f2; }
+.colleague-card { 
+    display: flex; 
+    align-items: center; 
+    background: #0e1621; 
+    padding: 14px; 
+    border-radius: 8px; 
+    margin-bottom: 12px; 
+    border: 1px solid #242f3d; 
+}
+.colleague-avatar { 
+    font-size: 32px; 
+    margin-right: 16px; 
+    background: #17212b; 
+    width: 48px; 
+    height: 48px; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    border-radius: 50%; 
+    flex-shrink: 0; 
+}
+.colleague-info { flex: 1; }
+.colleague-info h4 { 
+    margin: 0 0 6px 0; 
+    font-size: 16px; 
+    color: #ffffff; 
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+}
+.colleague-info p { 
+    margin: 0; 
+    font-size: 14px; 
+    color: #94a3b8; 
+    line-height: 1.4; 
+}
+.badge-penalty { 
+    background: rgba(239, 68, 68, 0.15); 
+    color: #ff5555; 
+    padding: 3px 8px; 
+    border-radius: 6px; 
+    font-size: 12px; 
+    font-weight: bold; 
+    border: 1px solid rgba(239, 68, 68, 0.3); 
+}

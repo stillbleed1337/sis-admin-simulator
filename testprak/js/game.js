@@ -4,11 +4,9 @@
 
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
-    // ВОЗВРАЩЕНО: Теперь игра стартует с теста!
     create() { this.scene.start('IntroScene'); }
 }
 
-// ВОЗВРАЩЕНО: Полный код входного теста (Мороженое)
 class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     
@@ -148,15 +146,15 @@ class MainWorkspaceScene extends Phaser.Scene {
             pingNeighborDone: false
         };
 
+        // ДОБАВЛЕНО: waitingForNext для кнопки "Далее"
         this.chatData = {
-            'Гл. Бухгалтер': { history: '', queue: [...DIALOGS.accountant.intro], hintBought: false, isTyping: false },
-            'Магистр': { history: '', queue: [], hintBought: false, isTyping: false },
-            'Жорик': { history: '', queue: [], hintBought: false, isTyping: false }
+            'Гл. Бухгалтер': { history: '', queue: [...DIALOGS.accountant.intro], hintBought: false, isTyping: false, waitingForNext: false },
+            'Магистр': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
+            'Жорик': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false }
         };
 
         this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
-        // Игровые объекты на столе
         this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
         const board = this.add.rectangle(230, 220, 380, 250, 0x3a3f44).setInteractive({ useHandCursor: true });
         this.add.rectangle(230, 220, 360, 230, 0xffffff); 
@@ -164,13 +162,11 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.add.rectangle(230, 220, 2, 230, 0xe0e6ed); 
         this.add.rectangle(320, 220, 2, 230, 0xe0e6ed); 
 
-        // Имитация заголовков колонок
         this.add.rectangle(95, 120, 76, 14, 0xf0f2f5);
         this.add.rectangle(185, 120, 76, 14, 0xf0f2f5);
         this.add.rectangle(275, 120, 76, 14, 0xf0f2f5);
         this.add.rectangle(365, 120, 76, 14, 0xf0f2f5);
 
-        // Декоративные стикеры с задачами
         this.add.rectangle(95, 150, 70, 28, 0xffeb3b).setAngle(-2); 
         this.add.rectangle(95, 185, 70, 28, 0xffeb3b).setAngle(1);  
         this.add.rectangle(185, 155, 70, 28, 0x4fc3f7).setAngle(3); 
@@ -179,78 +175,57 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
         this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
 
-        // === УЛУЧШЕННЫЕ КНОПКИ (Справочник и Схема сети) ===
-        // Вспомогательная функция для создания красивых интерактивных кнопок
         const createUIButton = (x, y, width, height, bgColor, text, iconEmoji, textColor) => {
             const container = this.add.container(x, y);
 
-            // 1. Отрисовка тени со скруглениями
             const shadow = this.add.graphics();
             shadow.fillStyle(0x000000, 0.4);
             shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
 
-            // 2. Отрисовка основного фона кнопки
             const bg = this.add.graphics();
             const drawBg = (strokeAlpha) => {
                 bg.clear();
                 bg.fillStyle(bgColor, 1);
-                bg.lineStyle(2, 0xffffff, strokeAlpha); // Полупрозрачная обводка
+                bg.lineStyle(2, 0xffffff, strokeAlpha); 
                 bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
                 bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
             };
-            drawBg(0.2); // Изначальная прозрачность обводки
+            drawBg(0.2); 
 
-            // 3. Контент кнопки (Иконка и текст)
             const icon = this.add.text(0, -15, iconEmoji, { font: '32px Arial' }).setOrigin(0.5);
-            const labelText = this.add.text(0, 25, text, { 
-                font: 'bold 15px Arial', 
-                fill: textColor 
-            }).setOrigin(0.5);
+            const labelText = this.add.text(0, 25, text, { font: 'bold 15px Arial', fill: textColor }).setOrigin(0.5);
 
             container.add([shadow, bg, icon, labelText]);
             
-            // 4. Настройка хитбокса (интерактивной зоны)
             const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
             container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
             container.input.cursor = 'pointer';
-
-            // --- Анимации (Game Juice) ---
             
-            // При наведении мыши (Hover)
             container.on('pointerover', () => {
                 this.tweens.add({ targets: container, y: y - 5, duration: 150, ease: 'Power2' });
-                drawBg(0.8); // Подсвечиваем рамку
+                drawBg(0.8); 
             });
-
-            // Когда мышь уходит (Mouse out)
             container.on('pointerout', () => {
                 this.tweens.add({ targets: container, y: y, duration: 150, ease: 'Power2' });
-                drawBg(0.2); // Возвращаем рамку в исходное состояние
+                drawBg(0.2); 
             });
-
-            // Эффект нажатия (Active / Pointer down)
             container.on('pointerdown', () => {
                 container.setScale(0.95);
                 shadow.clear();
-                shadow.fillStyle(0x000000, 0.2); // Тень становится светлее
-                shadow.fillRoundedRect(-width / 2 + 2, -height / 2 + 2, width, height, 12); // Тень прижимается
+                shadow.fillStyle(0x000000, 0.2); 
+                shadow.fillRoundedRect(-width / 2 + 2, -height / 2 + 2, width, height, 12); 
             });
-
-            // Отпускание кнопки (Pointer up)
             container.on('pointerup', () => {
                 container.setScale(1);
                 shadow.clear();
                 shadow.fillStyle(0x000000, 0.4);
                 shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
             });
-
             return container;
         };
 
-        // Создаем обновленные кнопки (я немного сдвинул их для идеального выравнивания)
         const book = createUIButton(130, 600, 140, 100, 0x1d4ed8, 'СПРАВОЧНИК', '📘', '#ffffff');
         const networkMap = createUIButton(310, 600, 160, 120, 0xf8fafc, 'СХЕМА СЕТИ', '🗺️', '#0f172a');
-        // ========================================================
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
@@ -314,18 +289,33 @@ class MainWorkspaceScene extends Phaser.Scene {
         if (this.sysState.progress === GAME_STAGE.WORKING && this.sysState.pingAccDone && this.sysState.pingNeighborDone) {
             this.sysState.progress = GAME_STAGE.CHECKING;
             this.playDing();
-            this.showToast('Проверь задачи на доске и возьми задачу в работу');
+            
+            // ИСПРАВЛЕНИЕ: Логичный текст тоста после нахождения ошибки
+            this.showToast('Проблема найдена! Ответьте Бухгалтеру в чате.');
             this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555');
             
             this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.outro];
             this.updateKanbanBoard();
+            
+            // Если телефон уже открыт на Бухгалтере, продолжаем чат без клика
+            if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
+                this.processChatQueue('Гл. Бухгалтер');
+            }
         }
     }
 
     openOverlay(overlayTarget) { 
         this.terminalDOM.setVisible(false); 
         overlayTarget.setVisible(true); 
-        if (overlayTarget === this.overlayPhone && this.chatDOM) this.chatDOM.setVisible(true);
+        if (overlayTarget === this.overlayPhone && this.chatDOM) {
+            this.chatDOM.setVisible(true);
+            
+            // ИСПРАВЛЕНИЕ: Автоматически продолжаем чат с текущим контактом при открытии телефона!
+            if (this.activeContact) {
+                this.renderChat();
+                this.processChatQueue(this.activeContact);
+            }
+        }
     }
     
     closeOverlay(overlayTarget) { 
@@ -350,249 +340,66 @@ class MainWorkspaceScene extends Phaser.Scene {
         closeMap.on('pointerdown', () => this.closeOverlay(this.overlayMap));
         this.overlayMap.add([bgMap, this.add.rectangle(0, 0, 900, 600, 0xffffee), this.add.text(0, 0, '[ ТУТ БУДЕТ КАРТИНКА СХЕМЫ ]', { font: '32px Arial', fill: '#aaaaaa' }).setOrigin(0.5), closeMap]);
 
-        // === УЛУЧШЕННОЕ ОКНО СПРАВОЧНИКА (HTML-верстка) ===
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
-        
-        // Затемняющий фон заднего плана
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
-        // HTML-структура и встроенные стили для Справочника
+        // Чистый HTML без стилей
         let bookHTML = `
-        <style>
-            .book-window {
-                width: 760px;
-                height: 520px;
-                background: #141b24;
-                border: 2px solid #2b5278;
-                border-radius: 12px;
-                box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8);
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                color: #e4e6eb;
-                display: flex;
-                flex-direction: column;
-                overflow: hidden;
-                user-select: none;
-                text-align: left;
-            }
-            .book-header {
-                background: #17212b;
-                padding: 14px 20px;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                border-bottom: 1px solid #242f3d;
-            }
-            .book-title {
-                font-size: 18px;
-                font-weight: bold;
-                color: #6ab2f2;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .book-close-btn {
-                color: #ff5555;
-                font-size: 22px;
-                cursor: pointer;
-                transition: transform 0.15s ease, color 0.15s ease;
-                line-height: 1;
-            }
-            .book-close-btn:hover {
-                transform: scale(1.2);
-                color: #ff7777;
-            }
-            .book-content {
-                padding: 25px;
-                overflow-y: auto;
-                flex: 1;
-            }
-            /* Кастомный скроллбар в стиле интерфейса */
-            .book-content::-webkit-scrollbar {
-                width: 8px;
-            }
-            .book-content::-webkit-scrollbar-track {
-                background: #0e1621;
-            }
-            .book-content::-webkit-scrollbar-thumb {
-                background: #242f3d;
-                border-radius: 4px;
-            }
-            .book-content::-webkit-scrollbar-thumb:hover {
-                background: #2b5278;
-            }
-            .book-section {
-                background: #182533;
-                border-left: 4px solid #2b5278;
-                padding: 16px;
-                border-radius: 0 8px 8px 0;
-                margin-bottom: 24px;
-                border: 1px solid #22303f;
-                border-left: 4px solid #6ab2f2;
-            }
-            .book-section h3 {
-                margin-top: 0;
-                margin-bottom: 12px;
-                color: #ffffff;
-                font-size: 18px;
-                display: flex;
-                align-items: center;
-                gap: 8px;
-            }
-            .book-list {
-                margin: 0;
-                padding-left: 20px;
-                line-height: 1.6;
-            }
-            .book-list li {
-                margin-bottom: 10px;
-                color: #ced4da;
-            }
-            .book-list strong {
-                color: #6ab2f2;
-            }
-            .colleague-card {
-                display: flex;
-                align-items: center;
-                background: #0e1621;
-                padding: 14px;
-                border-radius: 8px;
-                margin-bottom: 12px;
-                border: 1px solid #242f3d;
-            }
-            .colleague-avatar {
-                font-size: 32px;
-                margin-right: 16px;
-                background: #17212b;
-                width: 48px;
-                height: 48px;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                border-radius: 50%;
-                flex-shrink: 0;
-            }
-            .colleague-info {
-                flex: 1;
-            }
-            .colleague-info h4 {
-                margin: 0 0 6px 0;
-                font-size: 16px;
-                color: #ffffff;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-            .colleague-info p {
-                margin: 0;
-                font-size: 14px;
-                color: #94a3b8;
-                line-height: 1.4;
-            }
-            .badge-penalty {
-                background: rgba(239, 68, 68, 0.15);
-                color: #ff5555;
-                padding: 3px 8px;
-                border-radius: 6px;
-                font-size: 12px;
-                font-weight: bold;
-                border: 1px solid rgba(239, 68, 68, 0.3);
-            }
-        </style>
         <div class="book-window">
-            <div class="book-header">
-                <div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div>
-                <div class="book-close-btn" id="book-close-x">✖</div>
-            </div>
+            <div class="book-header"><div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div><div class="book-close-btn" id="book-close-x">✖</div></div>
             <div class="book-content">
                 <div class="book-section">
                     <h3>🎮 ПРАВИЛА ИГРЫ</h3>
                     <ol class="book-list">
-                        <li><strong>Получайте задачи:</strong> Следите за входящими сообщениями от сотрудников в мессенджере.</li>
-                        <li><strong>Управляйте Канбан-доской:</strong> Обязательно переносите новые задачи в работу, чтобы разблокировать подсказки.</li>
-                        <li><strong>Решайте инциденты:</strong> Проводите диагностику сетей и серверов через Linux-терминал.</li>
+                        <li><strong>Получайте задачи:</strong> Следите за входящими сообщениями от сотрудников.</li>
+                        <li><strong>Управляйте Канбан-доской:</strong> Обязательно переносите задачи в работу.</li>
+                        <li><strong>Решайте инциденты:</strong> Проводите диагностику через Linux-терминал.</li>
                     </ol>
                 </div>
-                
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОДСКАЗКИ КОЛЛЕГ</h3>
-                    
                     <div class="colleague-card">
                         <div class="colleague-avatar">👾</div>
                         <div class="colleague-info">
                             <h4>Жорик <span class="badge-penalty">Штраф: 5 баллов</span></h4>
-                            <p>Весельчак и душа компании. Отлично шарит в компьютерах, но жуткий раздолбай. Его советы простые, но могут быть поверхностными.</p>
+                            <p>Весельчак и душа компании. Отлично шарит в компьютерах, но жуткий раздолбай.</p>
                         </div>
                     </div>
-
                     <div class="colleague-card">
                         <div class="colleague-avatar">🧙‍♂️</div>
                         <div class="colleague-info">
                             <h4>Магистр <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Штраф: 10 баллов</span></h4>
-                            <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть. Его подсказки — это стопроцентное и глубокое решение инцидента.</p>
+                            <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>`;
 
-        // Создаем DOM-элемент окна
         this.bookDOM = this.add.dom(0, 0).createFromHTML(bookHTML);
-
-        // Слушатель клика на крестик закрытия внутри HTML
         this.bookDOM.addListener('click');
-        this.bookDOM.on('click', (event) => {
-            if (event.target.id === 'book-close-x') {
-                this.closeOverlay(this.overlayBook);
-            }
-        });
-
-        // Собираем контейнер (DOM элемент центрируется автоматически внутри контейнера)
+        this.bookDOM.on('click', (event) => { if (event.target.id === 'book-close-x') this.closeOverlay(this.overlayBook); });
         this.overlayBook.add([bgBook, this.bookDOM]);
-        // ==========================================================
+        
         this.createMessengerUI();
         this.createKanbanUI();
     }
 
     createKanbanUI() {
         this.overlayKanban = this.add.container(640, 360).setDepth(100).setVisible(false);
-        
-        // Темный фон позади доски
         let bgK = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
-        
-        // Кнопка закрытия
-        let closeK = this.add.text(520, -320, '✖', { font: '36px Arial', fill: '#ff0000' })
-            .setOrigin(0.5).setInteractive({ useHandCursor: true });
+        let closeK = this.add.text(520, -320, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeK.on('pointerdown', () => this.closeOverlay(this.overlayKanban));
         
-        // ВОЗВРАЩАЕМ ТОТ САМЫЙ КРАСИВЫЙ HTML-КОД ДЛЯ CSS
         let kanbanHTML = `
         <div class="kanban-board">
-            <div class="kanban-column" data-col="Очередь">
-                <div class="kanban-header">Очередь <span class="task-count">0</span></div>
-                <div class="kanban-tasks">
-                    <div class="kanban-task" id="task-1" style="display: none;">
-                        Задача 1:<br>Не работает 1С
-                    </div>
-                </div>
-            </div>
-            <div class="kanban-column" data-col="В работе">
-                <div class="kanban-header">В работе <span class="task-count">0</span></div>
-                <div class="kanban-tasks"></div>
-            </div>
-            <div class="kanban-column" data-col="Проверка">
-                <div class="kanban-header">Проверка <span class="task-count">0</span></div>
-                <div class="kanban-tasks"></div>
-            </div>
-            <div class="kanban-column" data-col="Готово">
-                <div class="kanban-header">Готово <span class="task-count">0</span></div>
-                <div class="kanban-tasks"></div>
-            </div>
+            <div class="kanban-column" data-col="Очередь"><div class="kanban-header">Очередь <span class="task-count">0</span></div><div class="kanban-tasks"><div class="kanban-task" id="task-1" style="display: none;">Задача 1:<br>Не работает 1С</div></div></div>
+            <div class="kanban-column" data-col="В работе"><div class="kanban-header">В работе <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
+            <div class="kanban-column" data-col="Проверка"><div class="kanban-header">Проверка <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
+            <div class="kanban-column" data-col="Готово"><div class="kanban-header">Готово <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
         </div>`;
 
-        // Создаем DOM элемент
         this.kanbanDOM = this.add.dom(0, 0).createFromHTML(kanbanHTML);
-
-        // Вешаем слушатель клика на стикер
         this.kanbanDOM.addListener('click');
         this.kanbanDOM.on('click', (event) => {
             if (event.target.id === 'task-1' || event.target.closest('#task-1')) {
@@ -606,21 +413,13 @@ class MainWorkspaceScene extends Phaser.Scene {
             }
         });
 
-        // Добавляем все в контейнер (kanbanDOM встанет ровно по центру)
         this.overlayKanban.add([bgK, this.kanbanDOM, closeK]);
     }
 
     updateKanbanBoard() {
-        // Находим HTML-стикер
         const task = document.getElementById('task-1');
         if (!task) return;
-
-        // Показываем стикер, если прогресс начался
-        if (this.sysState.progress >= GAME_STAGE.TASK_RECEIVED) {
-            task.style.display = 'block';
-        }
-
-        // Вызываем функцию moveTask из твоего файла kanban.js
+        if (this.sysState.progress >= GAME_STAGE.TASK_RECEIVED) task.style.display = 'block';
         if (typeof moveTask !== 'undefined') {
             if (this.sysState.progress === GAME_STAGE.TASK_RECEIVED) moveTask(task, 'Очередь');
             if (this.sysState.progress === GAME_STAGE.WORKING) moveTask(task, 'В работе');
@@ -645,11 +444,15 @@ class MainWorkspaceScene extends Phaser.Scene {
         const contacts = this.createContactList();
         this.chatHeader = this.add.text(-170, -270, 'Выберите чат', { font: '20px Arial', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
         
-        // ИСПРАВЛЕНИЕ: Чат не должен перекрывать кнопку закрытия (уменьшена ширина/высота)
         let chatHTML = `<div id="chat-body" style="width: 630px; height: 430px; overflow-y: auto; color: #e4e6eb; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; padding: 10px 20px; box-sizing: border-box; text-align: left; white-space: pre-wrap;"></div>`;
         this.chatDOM = this.add.dom(775, 340).createFromHTML(chatHTML).setVisible(false);
 
         this.chatHintBtn = this.add.text(150, 250, '💡 ВЗЯТЬ ПОДСКАЗКУ', { 
+            font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
+
+        // ИСПРАВЛЕНИЕ: Кнопка "ДАЛЕЕ"
+        this.chatNextBtn = this.add.text(150, 250, '➤ ДАЛЕЕ', { 
             font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
 
@@ -658,7 +461,7 @@ class MainWorkspaceScene extends Phaser.Scene {
             contacts.guru.bg, contacts.guru.avatarBg, contacts.guru.avatarIcon, contacts.guru.statusText, contacts.guru.separator,
             contacts.antiGuru.bg, contacts.antiGuru.avatarBg, contacts.antiGuru.avatarIcon, contacts.antiGuru.statusText, contacts.antiGuru.separator,
             contacts.acc.bg, contacts.acc.avatarBg, contacts.acc.avatarIcon, contacts.acc.statusText, contacts.acc.separator,
-            this.chatHeader, this.chatHintBtn
+            this.chatHeader, this.chatHintBtn, this.chatNextBtn
         ]);
     }
 
@@ -699,14 +502,13 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.processChatQueue(contactName);
     }
 
-    // ИСПРАВЛЕНИЕ: Пуленепробиваемый таймер чата
     processChatQueue(contactName) {
         if (this.activeContact !== contactName) return; 
         let data = this.chatData[contactName];
         
         if (data && data.queue && data.queue.length > 0 && !data.isTyping) {
             data.isTyping = true;
-            this.renderChat(); // Показываем "печатает..." сразу
+            this.renderChat(); 
             
             this.time.delayedCall(1500, () => {
                 if (this.activeContact !== contactName) {
@@ -737,15 +539,24 @@ class MainWorkspaceScene extends Phaser.Scene {
         let typingIndicator = data.isTyping ? '\n\n<span style="color:#8b9eb0; font-style:italic;">печатает...</span>' : '';
         element.innerHTML = this.buildChatHTML(data) + typingIndicator;
         
-        // Защита от сбоя при скрытом элементе
         try { element.scrollTop = element.scrollHeight; } catch(e){}
 
-        if (data.queue.length === 0 && !data.hintBought && this.sysState.progress === GAME_STAGE.WORKING && (this.activeContact === 'Магистр' || this.activeContact === 'Жорик')) {
+        this.chatHintBtn.setVisible(false);
+        if (this.chatNextBtn) this.chatNextBtn.setVisible(false);
+
+        // ИСПРАВЛЕНИЕ: Ожидание клика по кнопке ДАЛЕЕ
+        if (data.waitingForNext) {
+            this.chatNextBtn.setVisible(true);
+            this.chatNextBtn.removeAllListeners('pointerdown');
+            this.chatNextBtn.on('pointerdown', () => {
+                data.waitingForNext = false;
+                this.handleDialogNext(this.activeContact);
+            });
+        } 
+        else if (data.queue.length === 0 && !data.hintBought && this.sysState.progress === GAME_STAGE.WORKING && (this.activeContact === 'Магистр' || this.activeContact === 'Жорик')) {
             this.chatHintBtn.setVisible(true);
             this.chatHintBtn.removeAllListeners('pointerdown');
             this.chatHintBtn.on('pointerdown', () => this.buyHint(data));
-        } else {
-            this.chatHintBtn.setVisible(false);
         }
     }
 
@@ -799,17 +610,31 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     finishDialog(contactName) {
+        let data = this.chatData[contactName];
+        if (contactName === 'Гл. Бухгалтер') {
+            if (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING) {
+                // Вместо мгновенной архивации - включаем ожидание кнопки
+                data.waitingForNext = true;
+                this.renderChat();
+            }
+        }
+    }
+
+    // ИСПРАВЛЕНИЕ: Логика, которая запускается ТОЛЬКО после нажатия "ДАЛЕЕ"
+    handleDialogNext(contactName) {
+        let data = this.chatData[contactName];
         if (contactName === 'Гл. Бухгалтер') {
             if (this.sysState.progress === GAME_STAGE.INTRO) {
                 this.sysState.progress = GAME_STAGE.TASK_RECEIVED;
                 this.showToast('Проверь задачи на доске и возьми задачу в работу');
                 this.playDing();
                 this.updateKanbanBoard();
+                this.renderChat();
             } else if (this.sysState.progress === GAME_STAGE.CHECKING) {
                 this.sysState.progress = GAME_STAGE.FINISHED;
                 this.showToast('Задание успешно выполнено!');
                 this.playDing();
-                this.chatData['Гл. Бухгалтер'].history = '[ Чат заархивирован. Задание успешно выполнено. ]';
+                data.history = '\n\n[ Чат заархивирован. Задание успешно выполнено. ]';
                 this.renderChat();
                 this.updateKanbanBoard();
             }
@@ -823,17 +648,13 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 }
 
-// ИСПРАВЛЕНИЕ: Добавлена настройка масштабирования (scale) для четкой картинки!
 const config = { 
     type: Phaser.AUTO, 
     width: 1280, 
     height: 720, 
     parent: 'game-container', 
     dom: { createContainer: true },
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
-    }, 
+    scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, 
     scene: [BootScene, IntroScene, MainWorkspaceScene] 
 };
 const game = new Phaser.Game(config);
