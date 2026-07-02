@@ -1,10 +1,11 @@
 // ==========================================
-// ОСНОВНАЯ ИГРА (game.js) - ИСПРАВЛЕННАЯ ВЕРСИЯ
+// ОСНОВНАЯ ИГРА (game.js) - ИСПРАВЛЕННЫЙ UI И ЧАТ
 // ==========================================
 
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
     preload() {
+        // --- КАРТИНКИ ---
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
         this.load.image('orange', 'assets/images/orange.png');
@@ -14,9 +15,67 @@ class BootScene extends Phaser.Scene {
         this.load.image('green', 'assets/images/green.png');
         this.load.image('green2', 'assets/images/green2.png');
         this.load.image('stol', 'assets/images/stol.png');
-        this.load.image('desktop_bg', 'assets/desktop_wallpaper.png');
+        
+        // --- ЗВУКИ ---
+        this.load.audio('clickIce', 'assets/sounds/click_icecream.wav');
+        this.load.audio('unclickIce', 'assets/sounds/Close_Click_icecream.wav');
+        this.load.audio('dzin', 'assets/sounds/dzin.mp3'); 
+        this.load.audio('openClick', 'assets/sounds/Open_Click_1.wav');
+        this.load.audio('closeClick', 'assets/sounds/Close_Click_1.wav');
+        this.load.audio('popMsg', 'assets/sounds/pop_mesg.wav');
+        this.load.audio('keyTap', 'assets/sounds/keyboard-tap.wav');
+        this.load.audio('mumble', 'assets/sounds/mumble-male.mp3');
+        // --- ФОНОВАЯ МУЗЫКА ---
+        this.load.audio('bgm', 'assets/sounds/track-back.mp3');
     }
-    create() { this.scene.start('IntroScene'); }
+    create() { 
+        this.scene.start('IntroScene'); 
+        this.scene.launch('UIScene'); 
+    }
+}
+
+// ==========================================
+// НОВАЯ СЦЕНА: ГЛОБАЛЬНЫЙ UI И ЗВУК
+// ==========================================
+class UIScene extends Phaser.Scene {
+    constructor() { super('UIScene'); }
+    create() {
+        this.bgm = this.sound.add('bgm', { loop: true, volume: 0.3 });
+        this.sound.volume = 0.5; 
+
+        window.addEventListener('click', () => {
+            if (!this.bgm.isPlaying) {
+                this.bgm.play();
+            }
+        }, { once: true }); 
+
+        const sliderX = 1120;
+        const sliderY = 30;
+        const sliderWidth = 120;
+
+        this.add.text(sliderX - 35, sliderY - 12, '🔊', { font: '20px Arial' });
+
+        let track = this.add.rectangle(sliderX, sliderY, sliderWidth, 6, 0x555555).setOrigin(0, 0.5);
+        let fill = this.add.rectangle(sliderX, sliderY, sliderWidth * 0.5, 6, 0x4fc3f7).setOrigin(0, 0.5);
+
+        let knob = this.add.circle(sliderX + sliderWidth * 0.5, sliderY, 10, 0xffffff).setInteractive({ useHandCursor: true });
+        this.input.setDraggable(knob);
+
+        knob.on('pointerover', () => knob.setScale(1.2));
+        knob.on('pointerout', () => knob.setScale(1));
+
+        this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
+            if (gameObject !== knob) return;
+            
+            let newX = Phaser.Math.Clamp(dragX, sliderX, sliderX + sliderWidth);
+            knob.x = newX;
+            
+            let percent = (newX - sliderX) / sliderWidth;
+            fill.width = sliderWidth * percent;
+            
+            this.sound.volume = percent; 
+        });
+    }
 }
 
 class IntroScene extends Phaser.Scene {
@@ -24,18 +83,14 @@ class IntroScene extends Phaser.Scene {
     create() {
         this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
         this.wires = [
-
-            { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
-            { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
-            { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
-            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue2
-            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue
-            { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
-            { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
-            { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
-
-          
-
+            { id: 'wo',  name: 'БО', texture: 'orange' },
+            { id: 'o',   name: 'О',  texture: 'orange2' },
+            { id: 'wg',  name: 'БЗ', texture: 'green' },
+            { id: 'b',   name: 'С',  texture: 'blue2' },
+            { id: 'wb',  name: 'БС', texture: 'blue' },
+            { id: 'g',   name: 'З',  texture: 'green2' },
+            { id: 'wbr', name: 'БК', texture: 'brown' },
+            { id: 'br',  name: 'К',  texture: 'brown2' }
         ];
         this.solutionT568B = ['wo', 'o', 'wg', 'b', 'wb', 'g', 'wbr', 'br'];
         this.solutionT568A = ['wg', 'g', 'wo', 'b', 'wb', 'o', 'wbr', 'br'];
@@ -48,7 +103,7 @@ class IntroScene extends Phaser.Scene {
 
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.score, { font: GAME_CONFIG.FONTS.large, fill: GAME_CONFIG.COLORS.yellow, fontStyle: 'bold' });
         
-        const skipBtn = this.add.text(1250, 30, '[ ПРОПУСТИТЬ ТЕСТ ]', { font: '18px Arial', fill: '#dddddd' }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
+        const skipBtn = this.add.text(1250, 70, '[ ПРОПУСТИТЬ ТЕСТ ]', { font: '18px Arial', fill: '#dddddd' }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         skipBtn.on('pointerdown', () => { this.scene.start('MainWorkspaceScene', { currentScore: this.score }); });
 
         this.add.text(640, 60, 'ПРОВЕРКА КВАЛИФИКАЦИИ', { font: '32px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
@@ -79,16 +134,31 @@ class IntroScene extends Phaser.Scene {
         else if (sender === 'Магистр') this.dialogSenderText.setFill('#55aaff');
         else this.dialogSenderText.setFill('#ffff00');
         this.dialogMessageText.setText(this.activeMessages[0]);
+        
+        this.sound.play('openClick');
+        this.sound.play('popMsg');
+        this.dialogOverlay.setAlpha(0);
         this.dialogOverlay.setVisible(true);
+        this.tweens.add({ targets: this.dialogOverlay, alpha: 1, duration: 250, ease: 'Power2' });
     }
 
     advanceDialog() {
         this.currentMessageIndex++;
         if (this.currentMessageIndex < this.activeMessages.length) {
             this.dialogMessageText.setText(this.activeMessages[this.currentMessageIndex]);
+            this.sound.play('popMsg'); 
         } else {
-            this.dialogOverlay.setVisible(false);
-            if (this.isGameOverState) this.scene.restart(); else this.initTest();
+            this.sound.play('closeClick');
+            this.tweens.add({
+                targets: this.dialogOverlay,
+                alpha: 0,
+                duration: 150,
+                onComplete: () => {
+                    this.dialogOverlay.setVisible(false);
+                    this.dialogOverlay.setAlpha(1); 
+                    if (this.isGameOverState) this.scene.restart(); else this.initTest();
+                }
+            });
         }
     }
 
@@ -113,8 +183,16 @@ class IntroScene extends Phaser.Scene {
     handleSelection(wire, container) {
         if (this.isLocked) return; 
         const index = this.playerSelection.indexOf(wire.id);
-        if (index > -1) { this.playerSelection.splice(index, 1); container.setAlpha(1); } 
-        else { this.playerSelection.push(wire.id); container.setAlpha(0.2); }
+        if (index > -1) { 
+            this.playerSelection.splice(index, 1); 
+            container.setAlpha(1); 
+            this.sound.play('unclickIce'); 
+        } 
+        else { 
+            this.playerSelection.push(wire.id); 
+            container.setAlpha(0.2); 
+            this.sound.play('clickIce'); 
+        }
         let currentString = this.playerSelection.map(id => this.wires.find(w => w.id === id).name).join('-');
         this.selectionText.setText('Ваш выбор: ' + currentString);
         
@@ -173,7 +251,7 @@ class MainWorkspaceScene extends Phaser.Scene {
             'Жорик': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false }
         };
 
-        this.scoreText = this.add.text(1250, 30, 'Баллы: ' + this.totalScore, { font: 'bold 24px Arial', fill: '#ffff00' }).setOrigin(1, 0).setDepth(20);
+        this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.totalScore, { font: 'bold 24px Arial', fill: '#ffff00' }).setOrigin(0, 0).setDepth(20);
 
         this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
@@ -274,17 +352,11 @@ class MainWorkspaceScene extends Phaser.Scene {
         });
         book.on('pointerdown', () => this.openOverlay(this.overlayBook));
 
-        // ИСПРАВЛЕНИЕ: padding справа теперь 25px (вместо 15px), чтобы дать место ползунку
         let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px 25px 15px 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
         this.terminalDOM = this.add.dom(830, 300).createFromHTML(termHTML);
         
         if (typeof Terminal !== 'undefined') {
-            // ИСПРАВЛЕНИЕ: Добавили настройку cols: 74, чтобы текст переносился раньше
-            let xterm = new Terminal({ 
-                cursorBlink: true, 
-                cols: 74, 
-                theme: { background: '#000000' } 
-            });
+            let xterm = new Terminal({ cursorBlink: true, cols: 74, theme: { background: '#000000' } });
             const termElement = document.getElementById('terminal-container');
             if (termElement) {
                 xterm.open(termElement);
@@ -302,11 +374,17 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     showToast(msg) {
+        // Если это мысль героя, проигрываем звук бормотания (громкость можно подкрутить)
+        if (msg.startsWith('💬 Вы:')) {
+            try { this.sound.play('mumble', { volume: 0.8 }); } catch(e) {}
+        }
+
         let toast = this.add.text(640, 680, msg, { font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } }).setOrigin(0.5).setDepth(200);
         this.tweens.add({ targets: toast, alpha: 0, delay: 4000, duration: 1000, onComplete: () => toast.destroy() });
     }
 
     playDing() {
+        try { this.sound.play('dzin'); } catch(e) {}
         let flash = this.add.rectangle(640, 360, 1280, 720, 0xffffff, 0.1).setDepth(500);
         this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
     }
@@ -323,7 +401,6 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     checkTerminalProgress() {
-        // Уровень 1
         if (this.sysState.progress === GAME_STAGE.WORKING && this.sysState.pingAccDone && this.sysState.pingNeighborDone) {
             this.sysState.progress = GAME_STAGE.CHECKING;
             this.playDing();
@@ -334,7 +411,6 @@ class MainWorkspaceScene extends Phaser.Scene {
             if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') this.processChatQueue('Гл. Бухгалтер');
         }
 
-        // Уровень 2
         if (this.sysState.progress === GAME_STAGE.DIR_CHECKING) {
             this.playDing();
             if (!this.sysState.pingYaRuDone) {
@@ -352,11 +428,23 @@ class MainWorkspaceScene extends Phaser.Scene {
         }
     }
 
+    // ИСПРАВЛЕНИЕ: Прячем микшер при открытии ЛЮБОГО окна
     openOverlay(overlayTarget) { 
+        this.sound.play('openClick'); 
         this.terminalDOM.setVisible(false); 
+        
+        // Отключаем видимость сцены UIScene
+        this.scene.setVisible(false, 'UIScene');
+        
+        overlayTarget.setAlpha(0);
         overlayTarget.setVisible(true); 
+        this.tweens.add({ targets: overlayTarget, alpha: 1, duration: 250, ease: 'Power2' });
+
         if (overlayTarget === this.overlayPhone && this.chatDOM) {
+            this.chatDOM.setAlpha(0);
             this.chatDOM.setVisible(true);
+            this.tweens.add({ targets: this.chatDOM, alpha: 1, duration: 250, ease: 'Power2' });
+
             if (this.activeContact) {
                 this.renderChat();
                 this.processChatQueue(this.activeContact);
@@ -364,23 +452,49 @@ class MainWorkspaceScene extends Phaser.Scene {
         }
     }
     
+    // ИСПРАВЛЕНИЕ: Возвращаем микшер при закрытии окна
     closeOverlay(overlayTarget) { 
-        overlayTarget.setVisible(false); 
-        this.terminalDOM.setVisible(true); 
-        if (overlayTarget === this.overlayPhone && this.chatDOM) this.chatDOM.setVisible(false);
+        this.sound.play('closeClick'); 
 
-        if (overlayTarget === this.overlayBook && this.sysState.progress === GAME_STAGE.INTRO && !this.sysState.handbookRead) {
-            this.sysState.handbookRead = true; 
-            this.time.delayedCall(2000, () => {
-                this.playDing();
-                this.phoneShake.resume(); 
-                this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555'); 
-                this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.intro];
-                if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
-                    this.processChatQueue('Гл. Бухгалтер');
-                }
-            });
+        if (overlayTarget === this.overlayPhone && this.chatDOM) {
+            this.tweens.add({ targets: this.chatDOM, alpha: 0, duration: 150 });
         }
+
+        this.tweens.add({
+            targets: overlayTarget,
+            alpha: 0,
+            duration: 150,
+            onComplete: () => {
+                overlayTarget.setVisible(false); 
+                overlayTarget.setAlpha(1); 
+                
+                if (overlayTarget === this.overlayPhone && this.chatDOM) {
+                    this.chatDOM.setVisible(false);
+                    this.chatDOM.setAlpha(1);
+                }
+                
+                this.terminalDOM.setVisible(true); 
+                this.scene.setVisible(true, 'UIScene');
+
+                if (overlayTarget === this.overlayBook && this.sysState.progress === GAME_STAGE.INTRO && !this.sysState.handbookRead) {
+                    this.sysState.handbookRead = true; 
+                    this.time.delayedCall(1500, () => {
+                        this.playDing();
+                        
+                        // ИСПРАВЛЕНИЕ: Трясем телефон, только если он закрыт
+                        if (!this.overlayPhone.visible) {
+                            this.phoneShake.resume(); 
+                        }
+                        
+                        this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555'); 
+                        this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.intro];
+                        if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
+                            this.processChatQueue('Гл. Бухгалтер');
+                        }
+                    });
+                }
+            }
+        });
     }
 
     createOverlays() {
@@ -500,6 +614,14 @@ class MainWorkspaceScene extends Phaser.Scene {
                 if (this.sysState.progress === GAME_STAGE.DIR_FINISHED) moveTask(task2, 'Готово');
             }
         }
+
+        document.querySelectorAll('.kanban-column').forEach(col => {
+            let countSpan = col.querySelector('.task-count');
+            if (countSpan) {
+                let visibleCount = Array.from(col.querySelectorAll('.kanban-task')).filter(t => t.style.display !== 'none').length;
+                countSpan.innerText = visibleCount;
+            }
+        });
     }
 
     createMessengerUI() {
@@ -584,8 +706,10 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.processChatQueue(contactName);
     }
 
+    // ИСПРАВЛЕНИЕ: Интеллектуальная пауза чата, если закрыт телефон
     processChatQueue(contactName) {
-        if (this.activeContact !== contactName) return; 
+        // Если игрок закрыл телефон, мы не продолжаем очередь (Она на паузе)
+        if (this.activeContact !== contactName || !this.overlayPhone.visible) return; 
         let data = this.chatData[contactName];
         
         if (data && data.queue && data.queue.length > 0 && !data.isTyping) {
@@ -593,15 +717,19 @@ class MainWorkspaceScene extends Phaser.Scene {
             this.renderChat(); 
             
             this.time.delayedCall(1500, () => {
-                if (this.activeContact !== contactName) {
+                // Если за время таймера (1.5 сек) игрок успел закрыть окно - СТОП!
+                if (this.activeContact !== contactName || !this.overlayPhone.visible) {
                     data.isTyping = false; 
                     return; 
                 }
 
                 let msg = data.queue.shift();
-                if (msg) data.history += (data.history === '' ? '' : '\n\n') + msg;
-                data.isTyping = false;
+                if (msg) {
+                    data.history += (data.history === '' ? '' : '\n\n') + msg;
+                    this.sound.play('popMsg');
+                }
                 
+                data.isTyping = false;
                 this.renderChat();
 
                 if (data.queue.length === 0) {
@@ -727,7 +855,11 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.time.delayedCall(4000, () => {
                     this.sysState.progress = GAME_STAGE.DIR_INTRO;
                     this.playDing();
-                    this.phoneShake.resume();
+                    
+                    // ИСПРАВЛЕНИЕ: Трясем телефон, только если он закрыт
+                    if (!this.overlayPhone.visible) {
+                        this.phoneShake.resume();
+                    }
                     
                     this.chatData['Магистр'].hintBought = false;
                     this.chatData['Жорик'].hintBought = false;
@@ -777,6 +909,6 @@ const config = {
     parent: 'game-container', 
     dom: { createContainer: true },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, 
-    scene: [BootScene, IntroScene, MainWorkspaceScene] 
+    scene: [BootScene, IntroScene, MainWorkspaceScene, UIScene] 
 };
 const game = new Phaser.Game(config);

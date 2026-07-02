@@ -37,6 +37,11 @@ class VirtualTerminal {
         });
 
         this.term.onData(e => {
+            // --- ЗВУК ПЕЧАТИ (Тихий, 15% громкости) ---
+            if (this.scene && this.scene.sound) {
+                try { this.scene.sound.play('keyTap', { volume: 0.15 }); } catch(err) {}
+            }
+
             if (e.length > 1 && !e.includes('\x1b')) { let cleanText = e.replace(/[\r\n]+/g, ''); this.command += cleanText; this.term.write(cleanText); return; }
             switch (e) {
                 case '\r': 
