@@ -428,12 +428,22 @@ class MainWorkspaceScene extends Phaser.Scene {
         }
     }
 
-    // ИСПРАВЛЕНИЕ: Прячем микшер при открытии ЛЮБОГО окна
     openOverlay(overlayTarget) { 
         this.sound.play('openClick'); 
-        this.terminalDOM.setVisible(false); 
         
-        // Отключаем видимость сцены UIScene
+        // ИСПРАВЛЕНИЕ: Плавно растворяем терминал, а не прячем его резко
+        this.tweens.add({
+            targets: this.terminalDOM,
+            alpha: 0,
+            duration: 150,
+            ease: 'Power2',
+            onComplete: () => {
+                // Прячем полностью только когда он уже стал прозрачным
+                this.terminalDOM.setVisible(false);
+            }
+        });
+        
+        // Отключаем видимость сцены микшера
         this.scene.setVisible(false, 'UIScene');
         
         overlayTarget.setAlpha(0);
@@ -452,13 +462,22 @@ class MainWorkspaceScene extends Phaser.Scene {
         }
     }
     
-    // ИСПРАВЛЕНИЕ: Возвращаем микшер при закрытии окна
     closeOverlay(overlayTarget) { 
         this.sound.play('closeClick'); 
 
         if (overlayTarget === this.overlayPhone && this.chatDOM) {
             this.tweens.add({ targets: this.chatDOM, alpha: 0, duration: 150 });
         }
+
+        // ИСПРАВЛЕНИЕ: Плавно проявляем терминал из темноты
+        this.terminalDOM.setAlpha(0);
+        this.terminalDOM.setVisible(true);
+        this.tweens.add({
+            targets: this.terminalDOM,
+            alpha: 1,
+            duration: 250, // Терминал будет появляться за четверть секунды
+            ease: 'Power2'
+        });
 
         this.tweens.add({
             targets: overlayTarget,
@@ -473,19 +492,16 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.chatDOM.setAlpha(1);
                 }
                 
-                this.terminalDOM.setVisible(true); 
+                // Включаем микшер обратно
                 this.scene.setVisible(true, 'UIScene');
 
                 if (overlayTarget === this.overlayBook && this.sysState.progress === GAME_STAGE.INTRO && !this.sysState.handbookRead) {
                     this.sysState.handbookRead = true; 
                     this.time.delayedCall(1500, () => {
                         this.playDing();
-                        
-                        // ИСПРАВЛЕНИЕ: Трясем телефон, только если он закрыт
                         if (!this.overlayPhone.visible) {
                             this.phoneShake.resume(); 
                         }
-                        
                         this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555'); 
                         this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.intro];
                         if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
