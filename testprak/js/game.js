@@ -7,6 +7,7 @@ class BootScene extends Phaser.Scene {
 
     preload() {
         // Переносим загрузку сюда, чтобы Phaser успел подготовить текстуры
+        this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
         this.load.image('orange', 'assets/images/orange.png');
@@ -217,57 +218,26 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
         this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
 
-        const createUIButton = (x, y, width, height, bgColor, text, iconEmoji, textColor) => {
-            const container = this.add.container(x, y);
+        const book = this.add.container(150, 610).setDepth(2);
+        const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
+        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); // Корешок папки
+        const bookText = this.add.text(10, 0, 'СПРАВОЧНИК', { font: 'bold 16px Courier', fill: '#cccccc' }).setOrigin(0.5);
+        book.add([bookBg, bookSpine, bookText]);
+        book.setInteractive(new Phaser.Geom.Rectangle(-70, -50, 140, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
 
-            const shadow = this.add.graphics();
-            shadow.fillStyle(0x000000, 0.4);
-            shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
+        const networkMap = this.add.container(320, 610).setDepth(2);
+        const mapBg = this.add.rectangle(0, 0, 160, 100, 0x0a1910).setStrokeStyle(2, 0x00aa00);
+        const mapTextHeader = this.add.text(0, -15, 'СХЕМА СЕТИ', { font: 'bold 18px Courier', fill: '#00ff00' }).setOrigin(0.5);
+        const mapTextIP = this.add.text(0, 20, '192.168.8.x', { font: '14px Courier', fill: '#008800' }).setOrigin(0.5);
+        networkMap.add([mapBg, mapTextHeader, mapTextIP]);
+        networkMap.setInteractive(new Phaser.Geom.Rectangle(-80, -50, 160, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
 
-            const bg = this.add.graphics();
-            const drawBg = (strokeAlpha) => {
-                bg.clear();
-                bg.fillStyle(bgColor, 1);
-                bg.lineStyle(2, 0xffffff, strokeAlpha); 
-                bg.fillRoundedRect(-width / 2, -height / 2, width, height, 12);
-                bg.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
-            };
-            drawBg(0.2); 
-
-            const icon = this.add.text(0, -15, iconEmoji, { font: '32px Arial' }).setOrigin(0.5);
-            const labelText = this.add.text(0, 25, text, { font: 'bold 15px Arial', fill: textColor }).setOrigin(0.5);
-
-            container.add([shadow, bg, icon, labelText]);
-            
-            const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
-            container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
-            container.input.cursor = 'pointer';
-            
-            container.on('pointerover', () => {
-                this.tweens.add({ targets: container, y: y - 5, duration: 150, ease: 'Power2' });
-                drawBg(0.8); 
-            });
-            container.on('pointerout', () => {
-                this.tweens.add({ targets: container, y: y, duration: 150, ease: 'Power2' });
-                drawBg(0.2); 
-            });
-            container.on('pointerdown', () => {
-                container.setScale(0.95);
-                shadow.clear();
-                shadow.fillStyle(0x000000, 0.2); 
-                shadow.fillRoundedRect(-width / 2 + 2, -height / 2 + 2, width, height, 12); 
-            });
-            container.on('pointerup', () => {
-                container.setScale(1);
-                shadow.clear();
-                shadow.fillStyle(0x000000, 0.4);
-                shadow.fillRoundedRect(-width / 2 + 6, -height / 2 + 6, width, height, 12);
-            });
-            return container;
-        };
-
-        const book = createUIButton(130, 600, 140, 100, 0x1d4ed8, 'СПРАВОЧНИК', '📘', '#ffffff');
-        const networkMap = createUIButton(310, 600, 160, 120, 0xf8fafc, 'СХЕМА СЕТИ', '🗺️', '#0f172a');
+        // Строгие эффекты наведения
+        book.on('pointerover', () => { bookBg.setStrokeStyle(2, 0xffa500); bookText.setColor('#ffa500'); });
+        book.on('pointerout', () => { bookBg.setStrokeStyle(2, 0x555555); bookText.setColor('#cccccc'); });
+        
+        networkMap.on('pointerover', () => { mapBg.setStrokeStyle(2, 0xffffff); mapTextHeader.setColor('#ffffff'); });
+        networkMap.on('pointerout', () => { mapBg.setStrokeStyle(2, 0x00aa00); mapTextHeader.setColor('#00ff00'); });
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
@@ -376,12 +346,30 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     createOverlays() {
+        // === ОКНО СХЕМЫ СЕТИ С КАРТИНКОЙ ===
         this.overlayMap = this.add.container(640, 360).setDepth(100).setVisible(false);
-        let bgMap = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
-        let closeMap = this.add.text(420, -270, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closeMap.on('pointerdown', () => this.closeOverlay(this.overlayMap));
-        this.overlayMap.add([bgMap, this.add.rectangle(0, 0, 900, 600, 0xffffee), this.add.text(0, 0, '[ ТУТ БУДЕТ КАРТИНКА СХЕМЫ ]', { font: '32px Arial', fill: '#aaaaaa' }).setOrigin(0.5), closeMap]);
+        let bgMap = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
+        
+        // Выводим картинку схемы
+        let schemeImg = this.add.image(0, 0, 'network_map');
+        
+        // Подгоняем размер картинки под экран (например, 1000x562 пикселей)
+        // Если картинка сплющится, просто поменяй эти числа так, чтобы сохранить пропорции твоей фотки
+        schemeImg.setDisplaySize(1000, 562); 
+        
+        // Добавляем красивую строгую рамку вокруг фотографии
+        let frameMap = this.add.rectangle(0, 0, 1004, 566).setStrokeStyle(4, 0x2b5278);
 
+        // Кнопка закрытия (передвинута в правый верхний угол рамки)
+        let closeMap = this.add.text(530, -290, '✖', { font: '36px Arial', fill: '#ff5555' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        
+        // Эффекты наведения для кнопки "Закрыть"
+        closeMap.on('pointerover', () => closeMap.setScale(1.2).setFill('#ff7777'));
+        closeMap.on('pointerout', () => closeMap.setScale(1).setFill('#ff5555'));
+        closeMap.on('pointerdown', () => this.closeOverlay(this.overlayMap));
+
+        this.overlayMap.add([bgMap, schemeImg, frameMap, closeMap]);
+        // ===================================
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
@@ -399,18 +387,18 @@ class MainWorkspaceScene extends Phaser.Scene {
                     </ol>
                 </div>
                 <div class="book-section" style="border-left-color: #ff8a65;">
-                    <h3>🧙‍♂️ ПОДСКАЗКИ КОЛЛЕГ</h3>
+                    <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
                         <div class="colleague-avatar">👾</div>
                         <div class="colleague-info">
-                            <h4>Жорик <span class="badge-penalty">Штраф: 5 баллов</span></h4>
-                            <p>Весельчак и душа компании. Отлично шарит в компьютерах, но жуткий раздолбай.</p>
+                            <h4>Жорик <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Минус 5 баллов</span></h4>
+                            <p>Весельчак и душа компании. Отлично шарит в компьютерах, но часто подходит к работе слишком легкомысленно.</p>
                         </div>
                     </div>
                     <div class="colleague-card">
                         <div class="colleague-avatar">🧙‍♂️</div>
                         <div class="colleague-info">
-                            <h4>Магистр <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Штраф: 10 баллов</span></h4>
+                            <h4>Магистр <span class="badge-penalty">Минус 10 баллов</span></h4>
                             <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть.</p>
                         </div>
                     </div>
