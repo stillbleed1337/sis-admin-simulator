@@ -4,9 +4,7 @@
 
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
-
     preload() {
-        // Переносим загрузку сюда, чтобы Phaser успел подготовить текстуры
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
         this.load.image('orange', 'assets/images/orange.png');
@@ -15,26 +13,18 @@ class BootScene extends Phaser.Scene {
         this.load.image('brown2', 'assets/images/brown2.png');
         this.load.image('green', 'assets/images/green.png');
         this.load.image('green2', 'assets/images/green2.png');
-        
         this.load.image('stol', 'assets/images/stol.png');
         this.load.image('desktop_bg', 'assets/desktop_wallpaper.png');
     }
-
-    create() { 
-        // Загрузка завершена — переходим к тесту
-        this.scene.start('IntroScene'); 
-    }
+    create() { this.scene.start('IntroScene'); }
 }
 
 class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
-    
     create() {
-        // Отображаем фоновую картинку стола на весь экран
         this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
-
-        // ИСПРАВЛЕНИЕ: Жёстко связываем буквы (жилы кабеля) с правильными цветами картинок мороженого
         this.wires = [
+
             { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
             { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
             { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
@@ -43,8 +33,10 @@ class IntroScene extends Phaser.Scene {
             { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
             { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
             { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
+
+          
+
         ];
-        
         this.solutionT568B = ['wo', 'o', 'wg', 'b', 'wb', 'g', 'wbr', 'br'];
         this.solutionT568A = ['wg', 'g', 'wo', 'b', 'wb', 'o', 'wbr', 'br'];
 
@@ -104,35 +96,20 @@ class IntroScene extends Phaser.Scene {
         this.playerSelection = []; this.selectionText.setText('Ваш выбор: '); this.statusText.setText(''); this.isLocked = false; 
         this.interactiveItems.forEach(item => item.destroy()); this.interactiveItems = [];
         let shuffled = [...this.wires].sort(() => Math.random() - 0.5);
-        
-        // Корректируем координаты:
-        // startX = 190 (сдвигаем левее, чтобы ряд был по центру)
-        // spacing = 125 (делаем расстояние чуть больше, так как картинки шире)
-        const startX = 150; const spacing = 140;
-        
-        // Опускаем Y с 360 до 560, чтобы мороженое встало точно на серую полку стола
-        const targetY = 450; 
+        const startX = 150; const spacing = 140; const targetY = 450; 
 
         shuffled.forEach((wire, index) => {
             let container = this.add.container(startX + (index * spacing), targetY);
-            
-            // Загружаем спрайт
             let iceCream = this.add.image(0, 0, wire.texture);
-            
-            // ИСПРАВЛЕНИЕ: Делаем размер пропорциональным (например, 100x100 пикселей), чтобы картинку не сплющивало
             iceCream.setDisplaySize(185, 185);
-            
-            // Интерактивная зона теперь тоже квадратная под размер картинки
             let hitArea = this.add.rectangle(0, 0, 185, 185, 0x000000, 0).setInteractive({ useHandCursor: true });
-            
-            // ИСПРАВЛЕНИЕ: Сдвигаем текстовую подпись чуть выше (на -70), чтобы она аккуратно висела над стаканчиком
             let label = this.add.text(0, -110, wire.name, { font: 'bold 20px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
-            
             container.add([iceCream, hitArea, label]);
             this.interactiveItems.push(container);
             hitArea.on('pointerdown', () => this.handleSelection(wire, container));
         });
     }
+
     handleSelection(wire, container) {
         if (this.isLocked) return; 
         const index = this.playerSelection.indexOf(wire.id);
@@ -185,15 +162,18 @@ class MainWorkspaceScene extends Phaser.Scene {
             progress: GAME_STAGE.INTRO, 
             handbookRead: false,
             pingAccDone: false,
-            pingNeighborDone: false
+            pingNeighborDone: false,
+            pingYaRuDone: false 
         };
 
-        // ДОБАВЛЕНО: waitingForNext для кнопки "Далее"
         this.chatData = {
-            'Гл. Бухгалтер': { history: '', queue: [...DIALOGS.accountant.intro], hintBought: false, isTyping: false, waitingForNext: false },
+            'Гл. Бухгалтер': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
+            'Директор': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
             'Магистр': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
             'Жорик': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false }
         };
+
+        this.scoreText = this.add.text(1250, 30, 'Баллы: ' + this.totalScore, { font: 'bold 24px Arial', fill: '#ffff00' }).setOrigin(1, 0).setDepth(20);
 
         this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
@@ -294,11 +274,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         });
         book.on('pointerdown', () => this.openOverlay(this.overlayBook));
 
-        let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
+        // ИСПРАВЛЕНИЕ: padding справа теперь 25px (вместо 15px), чтобы дать место ползунку
+        let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px 25px 15px 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
         this.terminalDOM = this.add.dom(830, 300).createFromHTML(termHTML);
         
         if (typeof Terminal !== 'undefined') {
-            let xterm = new Terminal({ cursorBlink: true, theme: { background: '#000000' } });
+            // ИСПРАВЛЕНИЕ: Добавили настройку cols: 74, чтобы текст переносился раньше
+            let xterm = new Terminal({ 
+                cursorBlink: true, 
+                cols: 74, 
+                theme: { background: '#000000' } 
+            });
             const termElement = document.getElementById('terminal-container');
             if (termElement) {
                 xterm.open(termElement);
@@ -312,12 +298,12 @@ class MainWorkspaceScene extends Phaser.Scene {
 
     startWorkingDay() {
         this.time.delayedCall(1000, () => this.showToast('💬 Вы: Фух, начался первый рабочий день...'));
-        this.time.delayedCall(4500, () => this.showToast('💬 Вы: Надо бы заглянуть в справочник.'));
+        this.time.delayedCall(6500, () => this.showToast('💬 Вы: Надо бы заглянуть в справочник.'));
     }
 
     showToast(msg) {
         let toast = this.add.text(640, 680, msg, { font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } }).setOrigin(0.5).setDepth(200);
-        this.tweens.add({ targets: toast, alpha: 0, delay: 3000, duration: 1000, onComplete: () => toast.destroy() });
+        this.tweens.add({ targets: toast, alpha: 0, delay: 4000, duration: 1000, onComplete: () => toast.destroy() });
     }
 
     playDing() {
@@ -325,24 +311,44 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.tweens.add({ targets: flash, alpha: 0, duration: 300, onComplete: () => flash.destroy() });
     }
 
-    updateScore(amount) { this.totalScore += amount; }
+    updateScore(amount) { 
+        this.totalScore += amount; 
+        if (this.scoreText) {
+            this.scoreText.setText('Баллы: ' + this.totalScore);
+            if (amount < 0) {
+                this.scoreText.setFill('#ff5555');
+                this.time.delayedCall(1000, () => this.scoreText.setFill('#ffff00'));
+            }
+        }
+    }
 
     checkTerminalProgress() {
+        // Уровень 1
         if (this.sysState.progress === GAME_STAGE.WORKING && this.sysState.pingAccDone && this.sysState.pingNeighborDone) {
             this.sysState.progress = GAME_STAGE.CHECKING;
             this.playDing();
-            
-            // ИСПРАВЛЕНИЕ: Логичный текст тоста после нахождения ошибки
             this.showToast('Проблема найдена! Ответьте Бухгалтеру в чате.');
             this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555');
-            
             this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.outro];
             this.updateKanbanBoard();
-            
-            // Если телефон уже открыт на Бухгалтере, продолжаем чат без клика
-            if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
-                this.processChatQueue('Гл. Бухгалтер');
+            if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') this.processChatQueue('Гл. Бухгалтер');
+        }
+
+        // Уровень 2
+        if (this.sysState.progress === GAME_STAGE.DIR_CHECKING) {
+            this.playDing();
+            if (!this.sysState.pingYaRuDone) {
+                this.updateScore(-5);
+                this.showToast('Штраф -5 баллов: Не проверен ping интернета с вашего ПК!');
+            } else {
+                this.showToast('Антивирус запущен! Сообщите Директору в чате.');
             }
+
+            this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
+            this.chatData['Директор'].queue = [...DIALOGS.director.outro];
+            this.updateKanbanBoard();
+            
+            if (this.overlayPhone.visible && this.activeContact === 'Директор') this.processChatQueue('Директор');
         }
     }
 
@@ -351,8 +357,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         overlayTarget.setVisible(true); 
         if (overlayTarget === this.overlayPhone && this.chatDOM) {
             this.chatDOM.setVisible(true);
-            
-            // ИСПРАВЛЕНИЕ: Автоматически продолжаем чат с текущим контактом при открытии телефона!
             if (this.activeContact) {
                 this.renderChat();
                 this.processChatQueue(this.activeContact);
@@ -371,6 +375,10 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.playDing();
                 this.phoneShake.resume(); 
                 this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555'); 
+                this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.intro];
+                if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
+                    this.processChatQueue('Гл. Бухгалтер');
+                }
             });
         }
     }
@@ -385,7 +393,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
-        // Чистый HTML без стилей
         let bookHTML = `
         <div class="book-window">
             <div class="book-header"><div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div><div class="book-close-btn" id="book-close-x">✖</div></div>
@@ -435,7 +442,12 @@ class MainWorkspaceScene extends Phaser.Scene {
         
         let kanbanHTML = `
         <div class="kanban-board">
-            <div class="kanban-column" data-col="Очередь"><div class="kanban-header">Очередь <span class="task-count">0</span></div><div class="kanban-tasks"><div class="kanban-task" id="task-1" style="display: none;">Задача 1:<br>Не работает 1С</div></div></div>
+            <div class="kanban-column" data-col="Очередь"><div class="kanban-header">Очередь <span class="task-count">0</span></div>
+                <div class="kanban-tasks">
+                    <div class="kanban-task" id="task-1" style="display: none;">Задача 1:<br>Не работает 1С</div>
+                    <div class="kanban-task" id="task-2" style="display: none; border-left-color: #ba68c8;">Задача 2:<br>Нет интернета (Директор)</div>
+                </div>
+            </div>
             <div class="kanban-column" data-col="В работе"><div class="kanban-header">В работе <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
             <div class="kanban-column" data-col="Проверка"><div class="kanban-header">Проверка <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
             <div class="kanban-column" data-col="Готово"><div class="kanban-header">Готово <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
@@ -453,20 +465,40 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.showToast('Задача в работе. Подсказки в чате разблокированы.');
                 }
             }
+            if (event.target.id === 'task-2' || event.target.closest('#task-2')) {
+                if (this.sysState.progress === GAME_STAGE.DIR_TASK_RECEIVED) {
+                    this.sysState.progress = GAME_STAGE.DIR_WORKING; 
+                    this.updateKanbanBoard();
+                    this.guruStatus.setText('Магистр 🟢').setFill('#00ff00');
+                    this.antiGuruStatus.setText('Жорик 🟢').setFill('#00ff00');
+                    this.showToast('💬 Вы: Задание сложное, наверное нужно набрать команду help в терминале и посмотреть, какие команды доступны...');
+                }
+            }
         });
 
         this.overlayKanban.add([bgK, this.kanbanDOM, closeK]);
     }
 
     updateKanbanBoard() {
-        const task = document.getElementById('task-1');
-        if (!task) return;
-        if (this.sysState.progress >= GAME_STAGE.TASK_RECEIVED) task.style.display = 'block';
+        const task1 = document.getElementById('task-1');
+        const task2 = document.getElementById('task-2');
+
         if (typeof moveTask !== 'undefined') {
-            if (this.sysState.progress === GAME_STAGE.TASK_RECEIVED) moveTask(task, 'Очередь');
-            if (this.sysState.progress === GAME_STAGE.WORKING) moveTask(task, 'В работе');
-            if (this.sysState.progress === GAME_STAGE.CHECKING) moveTask(task, 'Проверка');
-            if (this.sysState.progress === GAME_STAGE.FINISHED) moveTask(task, 'Готово');
+            if (task1 && this.sysState.progress >= GAME_STAGE.TASK_RECEIVED) {
+                task1.style.display = 'block';
+                if (this.sysState.progress === GAME_STAGE.TASK_RECEIVED) moveTask(task1, 'Очередь');
+                if (this.sysState.progress === GAME_STAGE.WORKING) moveTask(task1, 'В работе');
+                if (this.sysState.progress === GAME_STAGE.CHECKING) moveTask(task1, 'Проверка');
+                if (this.sysState.progress >= GAME_STAGE.FINISHED) moveTask(task1, 'Готово');
+            }
+            
+            if (task2 && this.sysState.progress >= GAME_STAGE.DIR_TASK_RECEIVED) {
+                task2.style.display = 'block';
+                if (this.sysState.progress === GAME_STAGE.DIR_TASK_RECEIVED) moveTask(task2, 'Очередь');
+                if (this.sysState.progress === GAME_STAGE.DIR_WORKING) moveTask(task2, 'В работе');
+                if (this.sysState.progress === GAME_STAGE.DIR_CHECKING) moveTask(task2, 'Проверка');
+                if (this.sysState.progress === GAME_STAGE.DIR_FINISHED) moveTask(task2, 'Готово');
+            }
         }
     }
 
@@ -493,7 +525,6 @@ class MainWorkspaceScene extends Phaser.Scene {
             font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
 
-        // ИСПРАВЛЕНИЕ: Кнопка "ДАЛЕЕ"
         this.chatNextBtn = this.add.text(150, 250, '➤ ДАЛЕЕ', { 
             font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
@@ -503,6 +534,7 @@ class MainWorkspaceScene extends Phaser.Scene {
             contacts.guru.bg, contacts.guru.avatarBg, contacts.guru.avatarIcon, contacts.guru.statusText, contacts.guru.separator,
             contacts.antiGuru.bg, contacts.antiGuru.avatarBg, contacts.antiGuru.avatarIcon, contacts.antiGuru.statusText, contacts.antiGuru.separator,
             contacts.acc.bg, contacts.acc.avatarBg, contacts.acc.avatarIcon, contacts.acc.statusText, contacts.acc.separator,
+            contacts.dir.bg, contacts.dir.avatarBg, contacts.dir.avatarIcon, contacts.dir.statusText, contacts.dir.separator,
             this.chatHeader, this.chatHintBtn, this.chatNextBtn
         ]);
     }
@@ -517,19 +549,23 @@ class MainWorkspaceScene extends Phaser.Scene {
             return { bg, avatarBg, avatarIcon, statusText, separator };
         };
 
-        let guru = createContact(-190, 'Магистр ⚪', '#888888', 0x4fc3f7, '🧙‍♂️');
+        let guru = createContact(-200, 'Магистр ⚪', '#888888', 0x4fc3f7, '🧙‍♂️');
         this.guruStatus = guru.statusText;
         guru.bg.on('pointerdown', () => this.openChat('Магистр'));
 
-        let antiGuru = createContact(-125, 'Жорик ⚪', '#888888', 0xff8a65, '👾');
+        let antiGuru = createContact(-135, 'Жорик ⚪', '#888888', 0xff8a65, '👾');
         this.antiGuruStatus = antiGuru.statusText;
         antiGuru.bg.on('pointerdown', () => this.openChat('Жорик'));
 
-        let acc = createContact(-60, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, '👩‍💼');
+        let acc = createContact(-70, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, '👩‍💼');
         this.accStatus = acc.statusText;
         acc.bg.on('pointerdown', () => this.openChat('Гл. Бухгалтер'));
 
-        return { guru, antiGuru, acc };
+        let dir = createContact(-5, 'Директор ⚪', '#888888', 0xba68c8, '👔');
+        this.dirStatus = dir.statusText;
+        dir.bg.on('pointerdown', () => this.openChat('Директор'));
+
+        return { guru, antiGuru, acc, dir };
     }
 
     openChat(contactName) {
@@ -538,6 +574,10 @@ class MainWorkspaceScene extends Phaser.Scene {
         
         if (contactName === 'Гл. Бухгалтер' && (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING)) {
             this.accStatus.setText('Гл. Бухгалтер 🟢').setFill('#00ff00'); 
+        }
+        
+        if (contactName === 'Директор' && (this.sysState.progress === GAME_STAGE.DIR_INTRO || this.sysState.progress === GAME_STAGE.DIR_CHECKING)) {
+            this.dirStatus.setText('Директор 🟢').setFill('#00ff00'); 
         }
 
         this.renderChat();
@@ -586,7 +626,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.chatHintBtn.setVisible(false);
         if (this.chatNextBtn) this.chatNextBtn.setVisible(false);
 
-        // ИСПРАВЛЕНИЕ: Ожидание клика по кнопке ДАЛЕЕ
         if (data.waitingForNext) {
             this.chatNextBtn.setVisible(true);
             this.chatNextBtn.removeAllListeners('pointerdown');
@@ -595,7 +634,7 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.handleDialogNext(this.activeContact);
             });
         } 
-        else if (data.queue.length === 0 && !data.hintBought && this.sysState.progress === GAME_STAGE.WORKING && (this.activeContact === 'Магистр' || this.activeContact === 'Жорик')) {
+        else if (data.queue.length === 0 && !data.hintBought && (this.sysState.progress === GAME_STAGE.WORKING || this.sysState.progress === GAME_STAGE.DIR_WORKING) && (this.activeContact === 'Магистр' || this.activeContact === 'Жорик')) {
             this.chatHintBtn.setVisible(true);
             this.chatHintBtn.removeAllListeners('pointerdown');
             this.chatHintBtn.on('pointerdown', () => this.buyHint(data));
@@ -625,6 +664,7 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         let avatarIcon = '👤', avatarColor = '#555555';
         if (senderName === 'Гл. Бухгалтер') { avatarIcon = '👩‍💼'; avatarColor = '#e57373'; }
+        else if (senderName === 'Директор') { avatarIcon = '👔'; avatarColor = '#ba68c8'; }
         else if (senderName === 'Магистр') { avatarIcon = '🧙‍♂️'; avatarColor = '#4fc3f7'; }
         else if (senderName === 'Жорик') { avatarIcon = '👾'; avatarColor = '#ff8a65'; }
 
@@ -637,14 +677,16 @@ class MainWorkspaceScene extends Phaser.Scene {
         data.hintBought = true; 
         this.chatHintBtn.setVisible(false);
         
+        let isLevel2 = (this.sysState.progress >= GAME_STAGE.DIR_TASK_RECEIVED);
+        
         if (this.activeContact === 'Магистр') {
             this.updateScore(-GAME_CONFIG.SCORES.hintGuruCost);
             data.queue.push("Админ: Магистр, дайте совет. Не могу с задачей справиться.");
-            data.queue.push(DIALOGS.hints.guru);
+            data.queue.push(isLevel2 ? DIALOGS.hints.guruDir : DIALOGS.hints.guru);
         } else {
             this.updateScore(-GAME_CONFIG.SCORES.hintAntiGuruCost);
             data.queue.push("Админ: Привет! Не могу понять, как задачу выполнить.");
-            data.queue.push(DIALOGS.hints.antiGuru);
+            data.queue.push(isLevel2 ? DIALOGS.hints.antiGuruDir : DIALOGS.hints.antiGuru);
         }
         
         this.renderChat();
@@ -653,18 +695,19 @@ class MainWorkspaceScene extends Phaser.Scene {
 
     finishDialog(contactName) {
         let data = this.chatData[contactName];
-        if (contactName === 'Гл. Бухгалтер') {
-            if (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING) {
-                // Вместо мгновенной архивации - включаем ожидание кнопки
-                data.waitingForNext = true;
-                this.renderChat();
-            }
+        if (contactName === 'Гл. Бухгалтер' && (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING)) {
+            data.waitingForNext = true;
+            this.renderChat();
+        }
+        if (contactName === 'Директор' && (this.sysState.progress === GAME_STAGE.DIR_INTRO || this.sysState.progress === GAME_STAGE.DIR_CHECKING)) {
+            data.waitingForNext = true;
+            this.renderChat();
         }
     }
 
-    // ИСПРАВЛЕНИЕ: Логика, которая запускается ТОЛЬКО после нажатия "ДАЛЕЕ"
     handleDialogNext(contactName) {
         let data = this.chatData[contactName];
+        
         if (contactName === 'Гл. Бухгалтер') {
             if (this.sysState.progress === GAME_STAGE.INTRO) {
                 this.sysState.progress = GAME_STAGE.TASK_RECEIVED;
@@ -674,9 +717,46 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.renderChat();
             } else if (this.sysState.progress === GAME_STAGE.CHECKING) {
                 this.sysState.progress = GAME_STAGE.FINISHED;
-                this.showToast('Задание успешно выполнено!');
+                this.showToast('Задание 1 успешно выполнено!');
                 this.playDing();
-                data.history = '\n\n[ Чат заархивирован. Задание успешно выполнено. ]';
+                data.history = '[ Чат заархивирован. Задание успешно выполнено. ]';
+                this.accStatus.setText('Гл. Бухгалтер ⚪').setFill('#888888');
+                this.renderChat();
+                this.updateKanbanBoard();
+                
+                this.time.delayedCall(4000, () => {
+                    this.sysState.progress = GAME_STAGE.DIR_INTRO;
+                    this.playDing();
+                    this.phoneShake.resume();
+                    
+                    this.chatData['Магистр'].hintBought = false;
+                    this.chatData['Жорик'].hintBought = false;
+                    this.guruStatus.setText('Магистр ⚪').setFill('#888888');
+                    this.antiGuruStatus.setText('Жорик ⚪').setFill('#888888');
+
+                    this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
+                    this.chatData['Директор'].queue = [...DIALOGS.director.intro];
+                    
+                    if (this.overlayPhone.visible && this.activeContact === 'Директор') {
+                        this.processChatQueue('Директор');
+                    }
+                });
+            }
+        }
+
+        if (contactName === 'Директор') {
+            if (this.sysState.progress === GAME_STAGE.DIR_INTRO) {
+                this.sysState.progress = GAME_STAGE.DIR_TASK_RECEIVED;
+                this.showToast('Проверь задачи на доске и возьми задачу Директора в работу');
+                this.playDing();
+                this.updateKanbanBoard();
+                this.renderChat();
+            } else if (this.sysState.progress === GAME_STAGE.DIR_CHECKING) {
+                this.sysState.progress = GAME_STAGE.DIR_FINISHED;
+                this.showToast('Задание 2 успешно выполнено! Вы великолепны!');
+                this.playDing();
+                data.history = '[ Чат заархивирован. Задание успешно выполнено. ]';
+                this.dirStatus.setText('Директор ⚪').setFill('#888888');
                 this.renderChat();
                 this.updateKanbanBoard();
             }
