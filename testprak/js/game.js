@@ -38,8 +38,8 @@ class IntroScene extends Phaser.Scene {
             { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
             { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
             { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
-            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue
-            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue2
+            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue2
+            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue
             { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
             { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
             { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
