@@ -522,20 +522,14 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.overlayMap.contentContainer = contentContainer;
 
         closeMap.on('pointerdown', () => {
-            this.tweens.add({
-                targets: this.overlayMap, 
-                alpha: 0, 
-                duration: 150,
-                onComplete: () => {
-                    this.closeOverlay(this.overlayMap);
-                    this.overlayMap.setAlpha(1); 
-                }
-            });
+            this.tweens.add({ targets: this.overlayMap.contentContainer, scale: 0.9, y: 20, duration: 150, ease: 'Power2' });
+            this.closeOverlay(this.overlayMap);
         });
 
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
+        // ИСПРАВЛЕНИЕ: Добавлен 4-й пункт с локальным администратором
         let bookHTML = `
         <div class="book-window">
             <div class="book-header"><div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div><div class="book-close-btn" id="book-close-x">✖</div></div>
@@ -546,6 +540,7 @@ class MainWorkspaceScene extends Phaser.Scene {
                         <li><strong>Получайте задачи:</strong> Следите за входящими сообщениями от сотрудников.</li>
                         <li><strong>Управляйте Канбан-доской:</strong> Обязательно переносите задачи в работу.</li>
                         <li><strong>Решайте инциденты:</strong> Проводите диагностику через Linux-терминал.</li>
+                        <li><strong>Локальный администратор:</strong> Используйте логин <code>admin</code>.</li>
                     </ol>
                 </div>
                 <div class="book-section" style="border-left-color: #ff8a65;">
@@ -570,7 +565,14 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.bookDOM = this.add.dom(0, 0).createFromHTML(bookHTML);
         this.bookDOM.addListener('click');
-        this.bookDOM.on('click', (event) => { if (event.target.id === 'book-close-x') this.closeOverlay(this.overlayBook); });
+        
+        this.bookDOM.on('click', (event) => { 
+            if (event.target.id === 'book-close-x') {
+                this.tweens.add({ targets: this.bookDOM, scale: 0.9, y: 20, duration: 150, ease: 'Power2' });
+                this.closeOverlay(this.overlayBook); 
+            } 
+        });
+        
         this.overlayBook.add([bgBook, this.bookDOM]);
         
         this.createMessengerUI();
@@ -583,12 +585,13 @@ class MainWorkspaceScene extends Phaser.Scene {
         let closeK = this.add.text(520, -320, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeK.on('pointerdown', () => this.closeOverlay(this.overlayKanban));
         
+        // ИСПРАВЛЕНИЕ: Убрали текст "Задача 1" и "Задача 2" с карточек
         let kanbanHTML = `
         <div class="kanban-board">
             <div class="kanban-column" data-col="Очередь"><div class="kanban-header">Очередь <span class="task-count">0</span></div>
                 <div class="kanban-tasks">
-                    <div class="kanban-task" id="task-1" style="display: none;">Задача 1:<br>Не работает 1С</div>
-                    <div class="kanban-task" id="task-2" style="display: none; border-left-color: #ba68c8;">Задача 2:<br>Нет интернета (Директор)</div>
+                    <div class="kanban-task" id="task-1" style="display: none;">Не работает 1С</div>
+                    <div class="kanban-task" id="task-2" style="display: none; border-left-color: #ba68c8;">Нет интернета (Директор)</div>
                 </div>
             </div>
             <div class="kanban-column" data-col="В работе"><div class="kanban-header">В работе <span class="task-count">0</span></div><div class="kanban-tasks"></div></div>
@@ -891,7 +894,9 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.antiGuruStatus.setText('Жорик ⚪').setFill('#888888');
 
                     this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
-                    this.chatData['Директор'].queue = [...DIALOGS.director.intro];
+                    
+                    // ИСПРАВЛЕНИЕ: Добавлено сообщение "Админ: Уже смотрю."
+                    this.chatData['Директор'].queue = [...DIALOGS.director.intro, 'Админ: Уже смотрю.'];
                     
                     if (this.overlayPhone.visible && this.activeContact === 'Директор') {
                         this.processChatQueue('Директор');

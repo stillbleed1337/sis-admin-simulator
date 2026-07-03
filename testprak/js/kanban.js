@@ -32,18 +32,3 @@ function updateCounters() {
         column.querySelector('.task-count').textContent = count;
     });
 }
-
-// ==========================================
-// ТЕСТОВЫЙ ЗАПУСК (Раскомментируй, чтобы проверить)
-// ==========================================
-/*
-setTimeout(() => {
-    const myTask = document.getElementById('task-1');
-    moveTask(myTask, 'В работе');
-}, 2000); // Через 2 секунды задача прыгнет в колонку "В работе"
-
-setTimeout(() => {
-    const myTask = document.getElementById('task-1');
-    moveTask(myTask, 'Проверка');
-}, 4000); // Через 4 секунды задача прыгнет в колонку "Проверка"
-*/
