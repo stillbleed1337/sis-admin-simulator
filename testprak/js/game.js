@@ -1,16 +1,13 @@
 // ==========================================
-// ОСНОВНАЯ ИГРА (game.js) - ИСПРАВЛЕННЫЙ UI И ЧАТ
+// ОСНОВНАЯ ИГРА (game.js) - ИСПРАВЛЕННЫЙ UI И АНИМАЦИИ
 // ==========================================
 
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
+    
     preload() {
-<<<<<<< HEAD
-        // Переносим загрузку сюда, чтобы Phaser успел подготовить текстуры
-        this.load.image('network_map', 'assets/images/network_map.png');
-=======
         // --- КАРТИНКИ ---
->>>>>>> 7e1b65e75e3dc535b366d61d5389918dd0b7645a
+        this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
         this.load.image('orange', 'assets/images/orange.png');
@@ -30,9 +27,11 @@ class BootScene extends Phaser.Scene {
         this.load.audio('popMsg', 'assets/sounds/pop_mesg.wav');
         this.load.audio('keyTap', 'assets/sounds/keyboard-tap.wav');
         this.load.audio('mumble', 'assets/sounds/mumble-male.mp3');
+        
         // --- ФОНОВАЯ МУЗЫКА ---
         this.load.audio('bgm', 'assets/sounds/track-back.mp3');
     }
+    
     create() { 
         this.scene.start('IntroScene'); 
         this.scene.launch('UIScene'); 
@@ -282,7 +281,7 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         const book = this.add.container(150, 610).setDepth(2);
         const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
-        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); // Корешок папки
+        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); 
         const bookText = this.add.text(10, 0, 'СПРАВОЧНИК', { font: 'bold 16px Courier', fill: '#cccccc' }).setOrigin(0.5);
         book.add([bookBg, bookSpine, bookText]);
         book.setInteractive(new Phaser.Geom.Rectangle(-70, -50, 140, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
@@ -294,7 +293,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         networkMap.add([mapBg, mapTextHeader, mapTextIP]);
         networkMap.setInteractive(new Phaser.Geom.Rectangle(-80, -50, 160, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
 
-        // Строгие эффекты наведения
         book.on('pointerover', () => { bookBg.setStrokeStyle(2, 0xffa500); bookText.setColor('#ffa500'); });
         book.on('pointerout', () => { bookBg.setStrokeStyle(2, 0x555555); bookText.setColor('#cccccc'); });
         
@@ -312,56 +310,42 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.phoneObj.setSize(100, 180).setInteractive({ useHandCursor: true });
         this.phoneShake = this.tweens.add({ targets: this.phoneObj, angle: { from: -5, to: 5 }, duration: 50, yoyo: true, repeat: -1, paused: true });
 
+        // ВАЖНО: Сначала создаем оверлеи
         this.createOverlays();
 
+        // Потом вешаем на кнопки логику появления окон и анимаций
         networkMap.on('pointerdown', () => {
             this.openOverlay(this.overlayMap);
-            
-            // 1. Подготавливаем окно: делаем прозрачным и слегка уменьшенным
             this.overlayMap.setAlpha(0);
             this.overlayMap.contentContainer.setScale(0.9);
-            this.overlayMap.contentContainer.setY(20); // Слегка опускаем вниз
-            
-            // 2. Плавное появление темного фона
+            this.overlayMap.contentContainer.setY(20); 
             this.tweens.add({ targets: this.overlayMap, alpha: 1, duration: 250 });
-            
-            // 3. Эффект "выпрыгивания" самой картинки (Scale + Y возвращаются в норму)
-            this.tweens.add({ 
-                targets: this.overlayMap.contentContainer, 
-                scale: 1, 
-                y: 0,
-                duration: 400, 
-                ease: 'Back.out' // Эффект небольшой отдачи в конце анимации
-            });
+            this.tweens.add({ targets: this.overlayMap.contentContainer, scale: 1, y: 0, duration: 400, ease: 'Back.out' });
         });
+
         this.phoneObj.on('pointerdown', () => {
             this.phoneShake.pause();
             this.phoneObj.setAngle(0);
             this.openOverlay(this.overlayPhone);
         });
+
         board.on('pointerdown', () => {
             this.openOverlay(this.overlayKanban);
             this.updateKanbanBoard();
         });
+
         book.on('pointerdown', () => {
             this.openOverlay(this.overlayBook);
-
-            // 1. Подготавливаем окно
             this.overlayBook.setAlpha(0);
-            this.overlayBook.contentContainer.setScale(0.9);
-            this.overlayBook.contentContainer.setY(20);
-            
-            // 2. Плавное появление темного фона
+            this.bookDOM.node.style.opacity = 0;
+            this.bookDOM.setScale(0.9);
+            this.bookDOM.setY(20);
             this.tweens.add({ targets: this.overlayBook, alpha: 1, duration: 250 });
-            
-            // 3. Эффект "выпрыгивания" самого HTML-окна
-            this.tweens.add({ 
-                targets: this.overlayBook.contentContainer, 
-                scale: 1, 
-                y: 0,
-                duration: 400, 
-                ease: 'Back.out'
+            this.tweens.addCounter({
+                from: 0, to: 1, duration: 250,
+                onUpdate: (tween) => { this.bookDOM.node.style.opacity = tween.getValue(); }
             });
+            this.tweens.add({ targets: this.bookDOM, scale: 1, y: 0, duration: 400, ease: 'Back.out' });
         });
 
         let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px 25px 15px 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
@@ -386,11 +370,9 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     showToast(msg) {
-        // Если это мысль героя, проигрываем звук бормотания (громкость можно подкрутить)
         if (msg.startsWith('💬 Вы:')) {
             try { this.sound.play('mumble', { volume: 0.8 }); } catch(e) {}
         }
-
         let toast = this.add.text(640, 680, msg, { font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } }).setOrigin(0.5).setDepth(200);
         this.tweens.add({ targets: toast, alpha: 0, delay: 4000, duration: 1000, onComplete: () => toast.destroy() });
     }
@@ -443,19 +425,16 @@ class MainWorkspaceScene extends Phaser.Scene {
     openOverlay(overlayTarget) { 
         this.sound.play('openClick'); 
         
-        // ИСПРАВЛЕНИЕ: Плавно растворяем терминал, а не прячем его резко
         this.tweens.add({
             targets: this.terminalDOM,
             alpha: 0,
             duration: 150,
             ease: 'Power2',
             onComplete: () => {
-                // Прячем полностью только когда он уже стал прозрачным
                 this.terminalDOM.setVisible(false);
             }
         });
         
-        // Отключаем видимость сцены микшера
         this.scene.setVisible(false, 'UIScene');
         
         overlayTarget.setAlpha(0);
@@ -481,13 +460,12 @@ class MainWorkspaceScene extends Phaser.Scene {
             this.tweens.add({ targets: this.chatDOM, alpha: 0, duration: 150 });
         }
 
-        // ИСПРАВЛЕНИЕ: Плавно проявляем терминал из темноты
         this.terminalDOM.setAlpha(0);
         this.terminalDOM.setVisible(true);
         this.tweens.add({
             targets: this.terminalDOM,
             alpha: 1,
-            duration: 250, // Терминал будет появляться за четверть секунды
+            duration: 250,
             ease: 'Power2'
         });
 
@@ -504,7 +482,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.chatDOM.setAlpha(1);
                 }
                 
-                // Включаем микшер обратно
                 this.scene.setVisible(true, 'UIScene');
 
                 if (overlayTarget === this.overlayBook && this.sysState.progress === GAME_STAGE.INTRO && !this.sysState.handbookRead) {
@@ -526,11 +503,9 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     createOverlays() {
-        // === АНИМИРОВАННОЕ ОКНО СХЕМЫ СЕТИ ===
         this.overlayMap = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgMap = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
         
-        // Создаем внутренний контейнер для анимации (картинка + рамка + крестик)
         let contentContainer = this.add.container(0, 0);
 
         let schemeImg = this.add.image(0, 0, 'network_map');
@@ -541,14 +516,11 @@ class MainWorkspaceScene extends Phaser.Scene {
         closeMap.on('pointerover', () => closeMap.setScale(1.2).setFill('#ff7777'));
         closeMap.on('pointerout', () => closeMap.setScale(1).setFill('#ff5555'));
         
-        // Добавляем элементы во внутренний контейнер
         contentContainer.add([schemeImg, frameMap, closeMap]);
         this.overlayMap.add([bgMap, contentContainer]);
         
-        // Сохраняем ссылку на контент для вызова анимации извне
         this.overlayMap.contentContainer = contentContainer;
 
-        // Плавное исчезновение при закрытии
         closeMap.on('pointerdown', () => {
             this.tweens.add({
                 targets: this.overlayMap, 
@@ -556,11 +528,11 @@ class MainWorkspaceScene extends Phaser.Scene {
                 duration: 150,
                 onComplete: () => {
                     this.closeOverlay(this.overlayMap);
-                    this.overlayMap.setAlpha(1); // Возвращаем видимость контейнеру для следующего открытия
+                    this.overlayMap.setAlpha(1); 
                 }
             });
         });
-        // ===================================
+
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
@@ -596,33 +568,10 @@ class MainWorkspaceScene extends Phaser.Scene {
             </div>
         </div>`;
 
-        book.on('pointerdown', () => {
-            this.openOverlay(this.overlayBook);
-
-            // 1. Подготавливаем окно: прячем прозрачностью и опускаем
-            this.overlayBook.setAlpha(0);
-            this.bookDOM.node.style.opacity = 0;
-            this.bookDOM.setScale(0.9);
-            this.bookDOM.setY(20);
-            
-            // 2. Плавное появление темного фона
-            this.tweens.add({ targets: this.overlayBook, alpha: 1, duration: 250 });
-            
-            // 3. Плавное проявление HTML-кода (CSS Opacity)
-            this.tweens.addCounter({
-                from: 0, to: 1, duration: 250,
-                onUpdate: (tween) => { this.bookDOM.node.style.opacity = tween.getValue(); }
-            });
-
-            // 4. Эффект "выпрыгивания" самого окна
-            this.tweens.add({ 
-                targets: this.bookDOM, 
-                scale: 1, 
-                y: 0,
-                duration: 400, 
-                ease: 'Back.out'
-            });
-        });
+        this.bookDOM = this.add.dom(0, 0).createFromHTML(bookHTML);
+        this.bookDOM.addListener('click');
+        this.bookDOM.on('click', (event) => { if (event.target.id === 'book-close-x') this.closeOverlay(this.overlayBook); });
+        this.overlayBook.add([bgBook, this.bookDOM]);
         
         this.createMessengerUI();
         this.createKanbanUI();
@@ -786,9 +735,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.processChatQueue(contactName);
     }
 
-    // ИСПРАВЛЕНИЕ: Интеллектуальная пауза чата, если закрыт телефон
     processChatQueue(contactName) {
-        // Если игрок закрыл телефон, мы не продолжаем очередь (Она на паузе)
         if (this.activeContact !== contactName || !this.overlayPhone.visible) return; 
         let data = this.chatData[contactName];
         
@@ -797,7 +744,6 @@ class MainWorkspaceScene extends Phaser.Scene {
             this.renderChat(); 
             
             this.time.delayedCall(1500, () => {
-                // Если за время таймера (1.5 сек) игрок успел закрыть окно - СТОП!
                 if (this.activeContact !== contactName || !this.overlayPhone.visible) {
                     data.isTyping = false; 
                     return; 
@@ -935,8 +881,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.time.delayedCall(4000, () => {
                     this.sysState.progress = GAME_STAGE.DIR_INTRO;
                     this.playDing();
-                    
-                    // ИСПРАВЛЕНИЕ: Трясем телефон, только если он закрыт
                     if (!this.overlayPhone.visible) {
                         this.phoneShake.resume();
                     }
