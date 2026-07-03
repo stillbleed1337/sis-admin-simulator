@@ -14,8 +14,9 @@ class BootScene extends Phaser.Scene {
         this.load.image('brown2', 'assets/images/brown2.png');
         this.load.image('green', 'assets/images/green.png');
         this.load.image('green2', 'assets/images/green2.png');
-        this.load.image('stol', 'assets/images/stol.png');
+        this.load.image('stol', 'assets/images/cafetery.png');
         
+    
         // --- ЗВУКИ ---
         this.load.audio('clickIce', 'assets/sounds/click_icecream.wav');
         this.load.audio('unclickIce', 'assets/sounds/Close_Click_icecream.wav');
@@ -82,6 +83,7 @@ class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     create() {
         this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
+
         this.wires = [
             { id: 'wo',  name: 'БО', texture: 'orange' },
             { id: 'o',   name: 'О',  texture: 'orange2' },
@@ -166,18 +168,30 @@ class IntroScene extends Phaser.Scene {
         this.playerSelection = []; this.selectionText.setText('Ваш выбор: '); this.statusText.setText(''); this.isLocked = false; 
         this.interactiveItems.forEach(item => item.destroy()); this.interactiveItems = [];
         let shuffled = [...this.wires].sort(() => Math.random() - 0.5);
-        const startX = 150; const spacing = 140; const targetY = 450; 
+        const startX = 180; const spacing = 125; const targetY = 470; 
 
         shuffled.forEach((wire, index) => {
+            // 1. Создаем контейнер для каждого "стаканчика"
             let container = this.add.container(startX + (index * spacing), targetY);
+            
+            // 2. ВАЖНО: Устанавливаем глубину 2, чтобы мороженое было ПОВЕРХ бармена (у бармена depth=1)
+            container.setDepth(2); 
+
+            // 3. Добавляем картинку
             let iceCream = this.add.image(0, 0, wire.texture);
-            iceCream.setDisplaySize(185, 185);
-            let hitArea = this.add.rectangle(0, 0, 185, 185, 0x000000, 0).setInteractive({ useHandCursor: true });
-            let label = this.add.text(0, -110, wire.name, { font: 'bold 20px Arial', fill: '#ffffff', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
-            container.add([iceCream, hitArea, label]);
+            iceCream.setDisplaySize(155, 155);
+            
+            // 4. Добавляем невидимую зону для клика
+            let hitArea = this.add.rectangle(0, 0, 155, 155, 0x000000, 0).setInteractive({ useHandCursor: true });
+            
+            // Добавляем объекты внутрь контейнера
+            container.add([iceCream, hitArea]);
+            
+            // Запоминаем контейнер и вешаем событие клика
             this.interactiveItems.push(container);
             hitArea.on('pointerdown', () => this.handleSelection(wire, container));
         });
+
     }
 
     handleSelection(wire, container) {
@@ -193,6 +207,9 @@ class IntroScene extends Phaser.Scene {
             container.setAlpha(0.2); 
             this.sound.play('clickIce'); 
         }
+        
+        // Тут логика поиска по имени для строки «Ваш выбор» работает отлично, 
+        // так как данные берутся из оригинального массива this.wires в памяти
         let currentString = this.playerSelection.map(id => this.wires.find(w => w.id === id).name).join('-');
         this.selectionText.setText('Ваш выбор: ' + currentString);
         
@@ -226,7 +243,6 @@ class IntroScene extends Phaser.Scene {
         }
     }
 }
-
 class MainWorkspaceScene extends Phaser.Scene {
     constructor() { super('MainWorkspaceScene'); }
     
