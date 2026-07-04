@@ -110,13 +110,27 @@ class IntroScene extends Phaser.Scene {
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.score, { font: GAME_CONFIG.FONTS.large, fill: GAME_CONFIG.COLORS.yellow, fontStyle: 'bold' });
         
         const skipBtn = this.add.text(1250, 70, '[ ПРОПУСТИТЬ ТЕСТ ]', { font: '18px Arial', fill: '#dddddd' }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
-        skipBtn.on('pointerdown', () => { this.scene.start('MainWorkspaceScene', { currentScore: this.score }); });
-
+        skipBtn.on('pointerdown', () => { 
+            // Плавно уводим экран в черный за полсекунды
+            this.cameras.main.fadeOut(500, 0, 0, 0);
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('MainWorkspaceScene', { currentScore: this.score }); 
+            });
+        });
         this.add.text(640, 60, 'ПРОВЕРКА КВАЛИФИКАЦИИ', { font: '32px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
         this.add.text(640, 100, 'В какой последовательности вы порекомендуете мороженое друзьям?', { font: '22px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }).setOrigin(0.5);
-        this.selectionText = this.add.text(640, 560, 'Ваш выбор: ', { font: '24px Courier', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }).setOrigin(0.5);
+        
+        // ИСПРАВЛЕНИЕ: Улучшенное качество и стиль надписи
+        this.selectionText = this.add.text(640, 560, 'Ваш выбор: ', { 
+            fontFamily: 'Arial', 
+            fontSize: '24px', 
+            fontWeight: 'bold',
+            fill: '#ffffff', 
+            stroke: '#000000', 
+            strokeThickness: 2 
+        }).setOrigin(0.5).setShadow(2, 2, '#000000', 4, true, true);
+        
         this.statusText = this.add.text(640, 640, '', { font: '26px Arial', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
-
         this.createDialogUI();
         this.initTest();
     }
@@ -169,33 +183,42 @@ class IntroScene extends Phaser.Scene {
     }
 
     initTest() {
-        this.playerSelection = []; this.selectionText.setText('Ваш выбор: '); this.statusText.setText(''); this.isLocked = false; 
-        this.interactiveItems.forEach(item => item.destroy()); this.interactiveItems = [];
+        this.playerSelection = []; 
+        this.selectionText.setText('Ваш выбор: '); 
+        this.statusText.setText(''); 
+        this.isLocked = false; 
+        this.interactiveItems.forEach(item => item.destroy()); 
+        this.interactiveItems = [];
+        
         let shuffled = [...this.wires].sort(() => Math.random() - 0.5);
-        const startX = 180; const spacing = 125; const targetY = 470; 
+        
+        // Идеальный центр для 8 элементов с отступом 110
+        const startX = 255; 
+        const spacing = 110; 
+        const targetY = 500; 
 
         shuffled.forEach((wire, index) => {
-            // 1. Создаем контейнер для каждого "стаканчика"
             let container = this.add.container(startX + (index * spacing), targetY);
-            
-            // 2. ВАЖНО: Устанавливаем глубину 2, чтобы мороженое было ПОВЕРХ бармена (у бармена depth=1)
             container.setDepth(2); 
 
-            // 3. Добавляем картинку
+            // 1. Тень под размер 85
+            let shadow = this.add.image(4, 6, wire.texture);
+            shadow.setDisplaySize(75, 75);
+            shadow.setTint(0x000000); 
+            shadow.setAlpha(0.35);    
+
+            // 2. Мороженое размером 85
             let iceCream = this.add.image(0, 0, wire.texture);
-            iceCream.setDisplaySize(155, 155);
+            iceCream.setDisplaySize(75, 75); 
             
-            // 4. Добавляем невидимую зону для клика
-            let hitArea = this.add.rectangle(0, 0, 155, 155, 0x000000, 0).setInteractive({ useHandCursor: true });
+            // 3. Зона клика размером 85
+            let hitArea = this.add.rectangle(0, 0, 75, 75, 0x000000, 0).setInteractive({ useHandCursor: true });
             
-            // Добавляем объекты внутрь контейнера
-            container.add([iceCream, hitArea]);
+            container.add([shadow, iceCream, hitArea]);
             
-            // Запоминаем контейнер и вешаем событие клика
             this.interactiveItems.push(container);
             hitArea.on('pointerdown', () => this.handleSelection(wire, container));
         });
-
     }
 
     handleSelection(wire, container) {
@@ -224,7 +247,14 @@ class IntroScene extends Phaser.Scene {
 
             if (isSuccessB || isSuccessA) {
                 this.statusText.setText('УСПЕХ! ВЫ ПРОШЛИ ТЕСТ.').setFill('#00ff00');
-                this.time.delayedCall(1500, () => { this.scene.start('MainWorkspaceScene', { currentScore: this.score }); });
+                
+                // ИСПРАВЛЕНИЕ: Плавный уход в темноту при победе
+                this.time.delayedCall(1000, () => { 
+                    this.cameras.main.fadeOut(1000, 0, 0, 0);
+                    this.cameras.main.once('camerafadeoutcomplete', () => {
+                        this.scene.start('MainWorkspaceScene', { currentScore: this.score }); 
+                    });
+                });
             } else {
                 this.mistakesCount++;
                 if (this.mistakesCount === 1) {
@@ -253,7 +283,7 @@ class MainWorkspaceScene extends Phaser.Scene {
     init(data) { this.totalScore = data.currentScore || 0; }
 
     create() {
-        this.cameras.main.fadeIn(1500, 0, 0, 0);
+        this.cameras.main.fadeIn(1000, 0, 0, 0);
         this.cameras.main.setBackgroundColor(GAME_CONFIG.COLORS.bg);
 
         this.sysState = { 
@@ -376,6 +406,15 @@ class MainWorkspaceScene extends Phaser.Scene {
                 this.vTerm = new VirtualTerminal(xterm, this); 
             }
         }
+
+        // ИСПРАВЛЕНИЕ: Терминал стартует прозрачным и появляется синхронно с камерой (1000 мс)
+        this.terminalDOM.setAlpha(0);
+        this.tweens.add({
+            targets: this.terminalDOM,
+            alpha: 1,
+            duration: 1000,
+            ease: 'Power2' // Power2 делает эффект растворения более мягким
+        });
 
         this.startWorkingDay();
     }
