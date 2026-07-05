@@ -193,6 +193,7 @@ class IntroScene extends Phaser.Scene {
     }
 
     // === 2. ВЫЗОВ ДИАЛОГА С АНИМАЦИЕЙ ===
+    // === 2. ВЫЗОВ ДИАЛОГА С АНИМАЦИЕЙ ===
     showDialog(sender, messages, isGameOver = false) {
         this.isGameOverState = isGameOver; 
         this.activeMessages = messages; 
@@ -222,6 +223,10 @@ class IntroScene extends Phaser.Scene {
 
         this.dialogMessageText.setText(this.activeMessages[0]);
         
+        // ВОЗВРАЩАЕМ ЗВУКИ: Открытие окна и звук первого сообщения
+        this.sound.play('openClick');
+        this.sound.play('popMsg');
+
         // --- Анимация появления ---
         this.dialogOverlay.setVisible(true);
         this.dialogBg.setAlpha(0);
@@ -241,6 +246,9 @@ class IntroScene extends Phaser.Scene {
         this.currentMessageIndex++;
         
         if (this.currentMessageIndex < this.activeMessages.length) {
+            // ВОЗВРАЩАЕМ ЗВУКИ: Звук каждого следующего сообщения
+            this.sound.play('popMsg');
+
             // Микро-анимация смены текста ("вспышка" размера)
             this.dialogMessageText.setText(this.activeMessages[this.currentMessageIndex]);
             this.dialogMessageText.setScale(0.9);
@@ -250,6 +258,9 @@ class IntroScene extends Phaser.Scene {
                 duration: 200, ease: 'Back.out' 
             });
         } else {
+            // ВОЗВРАЩАЕМ ЗВУКИ: Звук закрытия окна
+            this.sound.play('closeClick');
+
             // --- Анимация закрытия ---
             this.isDialogClosing = true;
             this.tweens.add({ targets: this.dialogBg, alpha: 0, duration: 200 });
