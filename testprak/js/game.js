@@ -135,47 +135,133 @@ class IntroScene extends Phaser.Scene {
         this.initTest();
     }
 
+    // === 1. СОЗДАНИЕ УЛУЧШЕННОГО ИНТЕРФЕЙСА ДИАЛОГОВ ===
     createDialogUI() {
         this.dialogOverlay = this.add.container(640, 360).setDepth(100).setVisible(false);
-        let bg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive();
-        let phoneBg = this.add.rectangle(0, 0, 350, 500, 0x2b2b2b);
-        phoneBg.setStrokeStyle(4, 0x555555);
-        this.dialogSenderText = this.add.text(0, -200, 'Отправитель', { font: '24px Arial', fill: '#00ff00', fontStyle: 'bold' }).setOrigin(0.5);
-        this.dialogMessageText = this.add.text(0, 0, 'Текст сообщения', { font: '20px Arial', fill: '#ffffff', wordWrap: { width: 300 } }).setOrigin(0.5);
-        this.dialogHint = this.add.text(0, 220, '(Кликни по экрану, чтобы читать дальше)', { font: '14px Arial', fill: '#888888' }).setOrigin(0.5);
-        this.dialogOverlay.add([bg, phoneBg, this.dialogSenderText, this.dialogMessageText, this.dialogHint]);
-        bg.on('pointerdown', () => this.advanceDialog());
+        this.isDialogClosing = false; // Блокировка от спам-кликов
+        
+        // Темный фон (чуть прозрачнее, чтобы не полностью перекрывать игру)
+        this.dialogBg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.6).setInteractive();
+        this.dialogBg.on('pointerdown', () => this.advanceDialog());
+
+        // Внутренний контейнер для анимации самого окна
+        this.dialogBox = this.add.container(0, 0);
+
+        // Мягкая тень
+        const shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.4);
+        shadow.fillRoundedRect(-220 + 12, -160 + 12, 440, 320, 16);
+
+        // Основной фон (стиль темной темы Telegram/Discord)
+        const boxBg = this.add.graphics();
+        boxBg.fillStyle(0x17212b, 1); 
+        boxBg.fillRoundedRect(-220, -160, 440, 320, 16);
+        boxBg.lineStyle(2, 0x2b5278, 1);
+        boxBg.strokeRoundedRect(-220, -160, 440, 320, 16);
+
+        // Круглая подложка под аватарку
+        this.dialogAvatarBg = this.add.circle(-150, -100, 32, 0x2b5278);
+        this.dialogAvatarIcon = this.add.text(-150, -100, '👤', { font: '32px Arial' }).setOrigin(0.5);
+
+        // Имя отправителя
+        this.dialogSenderText = this.add.text(-100, -100, 'Отправитель', { 
+            font: 'bold 24px Arial', fill: '#ffffff' 
+        }).setOrigin(0, 0.5);
+
+        // Тонкий разделитель
+        const line = this.add.graphics();
+        line.lineStyle(1, 0x242f3d, 1);
+        line.lineBetween(-220, -45, 220, -45);
+
+        // Текст сообщения
+        this.dialogMessageText = this.add.text(0, 40, 'Текст сообщения', { 
+            font: '20px Arial', fill: '#e4e6eb', wordWrap: { width: 380 }, align: 'center', lineSpacing: 6
+        }).setOrigin(0.5);
+
+        // Подсказка "Кликни дальше" (пульсирующая)
+        this.dialogHint = this.add.text(0, 135, 'Кликни, чтобы продолжить ▼', { 
+            font: 'italic 14px Arial', fill: '#6ab2f2' 
+        }).setOrigin(0.5);
+
+        // Анимация пульсации подсказки
+        this.tweens.add({
+            targets: this.dialogHint, alpha: 0.3, yoyo: true, repeat: -1, duration: 800
+        });
+
+        this.dialogBox.add([shadow, boxBg, this.dialogAvatarBg, this.dialogAvatarIcon, this.dialogSenderText, line, this.dialogMessageText, this.dialogHint]);
+        this.dialogOverlay.add([this.dialogBg, this.dialogBox]);
     }
 
+    // === 2. ВЫЗОВ ДИАЛОГА С АНИМАЦИЕЙ ===
     showDialog(sender, messages, isGameOver = false) {
-        this.isGameOverState = isGameOver; this.activeMessages = messages; this.currentMessageIndex = 0;
+        this.isGameOverState = isGameOver; 
+        this.activeMessages = messages; 
+        this.currentMessageIndex = 0;
+        this.isDialogClosing = false;
+
         this.dialogSenderText.setText(sender);
-        if (sender === 'Жорик') this.dialogSenderText.setFill('#ff5555');
-        else if (sender === 'Магистр') this.dialogSenderText.setFill('#55aaff');
-        else this.dialogSenderText.setFill('#ffff00');
+        
+        // Настройка аватарок под персонажей (Game Juice)
+        if (sender === 'Жорик') {
+            this.dialogSenderText.setFill('#ff8a65');
+            this.dialogAvatarBg.setFillStyle(0xff8a65, 0.15); // Полупрозрачный фон цвета персонажа
+            this.dialogAvatarIcon.setText('👾');
+        } else if (sender === 'Магистр') {
+            this.dialogSenderText.setFill('#4fc3f7');
+            this.dialogAvatarBg.setFillStyle(0x4fc3f7, 0.15);
+            this.dialogAvatarIcon.setText('🧙‍♂️');
+        } else if (sender === 'Директор') {
+            this.dialogSenderText.setFill('#ffd54f');
+            this.dialogAvatarBg.setFillStyle(0xffd54f, 0.15);
+            this.dialogAvatarIcon.setText('💼');
+        } else {
+            this.dialogSenderText.setFill('#ffffff');
+            this.dialogAvatarBg.setFillStyle(0x555555, 0.15);
+            this.dialogAvatarIcon.setText('👤');
+        }
+
         this.dialogMessageText.setText(this.activeMessages[0]);
         
-        this.sound.play('openClick');
-        this.sound.play('popMsg');
-        this.dialogOverlay.setAlpha(0);
+        // --- Анимация появления ---
         this.dialogOverlay.setVisible(true);
-        this.tweens.add({ targets: this.dialogOverlay, alpha: 1, duration: 250, ease: 'Power2' });
+        this.dialogBg.setAlpha(0);
+        this.dialogBox.setScale(0.7).setAlpha(0).setY(40); // Окно выплывает немного снизу
+
+        this.tweens.add({ targets: this.dialogBg, alpha: 1, duration: 250 });
+        this.tweens.add({ 
+            targets: this.dialogBox, scale: 1, alpha: 1, y: 0, 
+            duration: 400, ease: 'Back.out' // Эффект приятной отдачи
+        });
     }
 
+    // === 3. ПЕРЕКЛЮЧЕНИЕ ФРАЗ И ЗАКРЫТИЕ ===
     advanceDialog() {
+        if (this.isDialogClosing) return; // Защита от спам-кликов
+
         this.currentMessageIndex++;
+        
         if (this.currentMessageIndex < this.activeMessages.length) {
+            // Микро-анимация смены текста ("вспышка" размера)
             this.dialogMessageText.setText(this.activeMessages[this.currentMessageIndex]);
-            this.sound.play('popMsg'); 
+            this.dialogMessageText.setScale(0.9);
+            this.dialogMessageText.setAlpha(0.5);
+            this.tweens.add({ 
+                targets: this.dialogMessageText, scale: 1, alpha: 1, 
+                duration: 200, ease: 'Back.out' 
+            });
         } else {
-            this.sound.play('closeClick');
+            // --- Анимация закрытия ---
+            this.isDialogClosing = true;
+            this.tweens.add({ targets: this.dialogBg, alpha: 0, duration: 200 });
             this.tweens.add({
-                targets: this.dialogOverlay,
-                alpha: 0,
-                duration: 150,
+                targets: this.dialogBox, scale: 0.8, alpha: 0, y: 20, 
+                duration: 200, ease: 'Power2',
                 onComplete: () => {
                     this.dialogOverlay.setVisible(false);
-                    this.dialogOverlay.setAlpha(1); 
+                    // Возвращаем переменные в норму для следующих диалогов
+                    this.dialogBox.setScale(1).setAlpha(1).setY(0); 
+                    
+                    // Логика игры после диалога
                     if (this.isGameOverState) this.scene.restart(); else this.initTest();
                 }
             });
