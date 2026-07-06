@@ -85,19 +85,23 @@ class UIScene extends Phaser.Scene {
 
 class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
+    
     create() {
+        // Отображаем фоновую картинку стола на весь экран
         this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
 
+        // ИСПРАВЛЕНИЕ: Жёстко связываем буквы (жилы кабеля) с правильными цветами картинок мороженого
         this.wires = [
-            { id: 'wo',  name: 'БО', texture: 'orange' },
-            { id: 'o',   name: 'О',  texture: 'orange2' },
-            { id: 'wg',  name: 'БЗ', texture: 'green' },
-            { id: 'b',   name: 'С',  texture: 'blue2' },
-            { id: 'wb',  name: 'БС', texture: 'blue' },
-            { id: 'g',   name: 'З',  texture: 'green2' },
-            { id: 'wbr', name: 'БК', texture: 'brown' },
-            { id: 'br',  name: 'К',  texture: 'brown2' }
+            { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
+            { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
+            { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
+            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue
+            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue2
+            { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
+            { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
+            { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
         ];
+        
         this.solutionT568B = ['wo', 'o', 'wg', 'b', 'wb', 'g', 'wbr', 'br'];
         this.solutionT568A = ['wg', 'g', 'wo', 'b', 'wb', 'o', 'wbr', 'br'];
 
@@ -108,7 +112,6 @@ class IntroScene extends Phaser.Scene {
         this.isLocked = false; 
 
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.score, { font: GAME_CONFIG.FONTS.large, fill: GAME_CONFIG.COLORS.yellow, fontStyle: 'bold' });
-        
         const skipBtn = this.add.text(1250, 70, '[ ПРОПУСТИТЬ ТЕСТ ]', { font: '18px Arial', fill: '#dddddd' }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         skipBtn.on('pointerdown', () => { 
             // Плавно уводим экран в черный за полсекунды
