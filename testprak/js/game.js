@@ -684,17 +684,29 @@ class MainWorkspaceScene extends Phaser.Scene {
         // ИСПРАВЛЕНИЕ: Добавлен 4-й пункт с локальным администратором
         let bookHTML = `
         <div class="book-window">
-            <div class="book-header"><div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div><div class="book-close-btn" id="book-close-x">✖</div></div>
+            <div class="book-header">
+                <div class="book-title">📘 СПРАВОЧНИК СИСАДМИНА</div>
+                <div class="book-close-btn" id="book-close-x">✖</div>
+            </div>
             <div class="book-content">
+                
                 <div class="book-section">
                     <h3>🎮 ПРАВИЛА ИГРЫ</h3>
                     <ol class="book-list">
                         <li><strong>Получайте задачи:</strong> Следите за входящими сообщениями от сотрудников.</li>
                         <li><strong>Управляйте Канбан-доской:</strong> Обязательно переносите задачи в работу.</li>
                         <li><strong>Решайте инциденты:</strong> Проводите диагностику через Linux-терминал.</li>
-                        <li><strong>Локальный администратор:</strong> Используйте логин <code>admin</code>.</li>
                     </ol>
                 </div>
+
+                <div class="book-section" style="border-left-color: #4fc3f7;">
+                    <h3>🖥️ ИНФОРМАЦИЯ ПО СЕРВЕРАМ</h3>
+                    <ul class="book-list">
+                        <li><strong>Proxy:</strong> служит для раздачи интернета пользователям.</li>
+                        <li style="color: #ff8a65;"><strong>Внимание:</strong> Если не установлен или не запущен антивирус Касперского на рабочей станции, доступ к интернету прекращается.</li>
+                    </ul>
+                </div>
+
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
@@ -712,6 +724,7 @@ class MainWorkspaceScene extends Phaser.Scene {
                         </div>
                     </div>
                 </div>
+                
             </div>
         </div>`;
 
