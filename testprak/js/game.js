@@ -977,7 +977,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         return htmlContent;
     }
 
-    formatChatMessage(msg) {
+  formatChatMessage(msg) {
         let isOutgoing = msg.startsWith('Админ:');
         let isSystem = msg.startsWith('['); 
         
@@ -995,14 +995,14 @@ class MainWorkspaceScene extends Phaser.Scene {
         else if (senderName === 'Магистр') { avatarImgPath = 'assets/images/magistr.png'; avatarColor = '#4fc3f7'; }
         else if (senderName === 'Жорик') { avatarImgPath = 'assets/images/jora.png'; avatarColor = '#ff8a65'; }
 
-        if (isSystem) return `<div style="text-align: center; margin: 15px 0;"><span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span></div>`;
+        // Системные сообщения
+        if (isSystem) return `<div style="text-align: center; margin: 10px 0;"><span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span></div>`;
         
-        if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 15px;"><div style="background: #2b5278; color: #fff; padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 56px; height: 56px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 12px; flex-shrink: 0; font-size: 26px;">👨‍💻</div></div>`;
+        // ИСХОДЯЩИЕ СООБЩЕНИЯ (Аватарка Админа)
+        if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 8px;"><div style="background: #2b5278; color: #fff; padding: 10px 14px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #1e88e5; overflow: hidden; position: relative; flex-shrink: 0; margin-left: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/sisadmin.png'); background-size: cover; background-position: center;"></div></div></div>`;
         
-        return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 15px;">
-            <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid ${avatarColor}; overflow: hidden; position: relative; flex-shrink: 0; margin-right: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('${avatarImgPath}'); background-size: cover; background-position: center;"></div></div>
-            <div style="background: #182533; color: #e4e6eb; padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div>
-        </div>`;
+        // ВХОДЯЩИЕ СООБЩЕНИЯ (Аватарки NPC)
+        return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 8px;"><div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${avatarColor}; overflow: hidden; position: relative; flex-shrink: 0; margin-right: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('${avatarImgPath}'); background-size: cover; background-position: center;"></div></div><div style="background: #182533; color: #e4e6eb; padding: 10px 14px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div></div>`;
     }
 
     buyHint(data) {
