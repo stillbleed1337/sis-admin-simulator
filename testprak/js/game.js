@@ -140,7 +140,9 @@ class IntroScene extends Phaser.Scene {
         let dialogHTML = `
         <div id="html-dialog-box" style="width: 460px; background: #17212b; border: 2px solid #2b5278; border-radius: 16px; box-shadow: 12px 12px 0px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; position: relative; font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; padding: 25px 20px 45px 20px;">
             <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
-                <div id="html-dialog-avatar" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid #555555; background-size: 135%; background-position: center 20%; flex-shrink: 0; margin-left: 10px;"></div>
+                <div id="html-dialog-avatar" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid #555555; overflow: hidden; position: relative; flex-shrink: 0; margin-left: 10px;">
+                    <div id="html-dialog-avatar-img" style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-size: cover; background-position: center;"></div>
+                </div>
                 <div id="html-dialog-sender" style="font-size: 24px; font-weight: bold; color: #ffffff; margin-left: 20px;">Отправитель</div>
             </div>
             <div style="width: 100%; height: 1px; background: #242f3d; margin-bottom: 25px;"></div>
@@ -161,6 +163,7 @@ class IntroScene extends Phaser.Scene {
         this.isDialogClosing = false;
 
         let avatarEl = document.getElementById('html-dialog-avatar');
+        let avatarImgEl = document.getElementById('html-dialog-avatar-img');
         let senderEl = document.getElementById('html-dialog-sender');
         let textEl = document.getElementById('html-dialog-text');
 
@@ -169,23 +172,23 @@ class IntroScene extends Phaser.Scene {
         if (sender === 'Жорик') {
             senderEl.style.color = '#ff8a65';
             avatarEl.style.borderColor = '#ff8a65';
-            avatarEl.style.backgroundImage = "url('assets/images/jora.png')";
+            avatarImgEl.style.backgroundImage = "url('assets/images/jora.png')";
         } else if (sender === 'Магистр') {
             senderEl.style.color = '#4fc3f7';
             avatarEl.style.borderColor = '#4fc3f7';
-            avatarEl.style.backgroundImage = "url('assets/images/magistr.png')";
+            avatarImgEl.style.backgroundImage = "url('assets/images/magistr.png')";
         } else if (sender === 'Директор') {
             senderEl.style.color = '#ffd54f';
             avatarEl.style.borderColor = '#ffd54f';
-            avatarEl.style.backgroundImage = "url('assets/images/director.png')";
+            avatarImgEl.style.backgroundImage = "url('assets/images/director.png')";
         } else if (sender === 'Гл. Бухгалтер') {
             senderEl.style.color = '#e57373';
             avatarEl.style.borderColor = '#e57373';
-            avatarEl.style.backgroundImage = "url('assets/images/buhgalter.png')";
+            avatarImgEl.style.backgroundImage = "url('assets/images/buhgalter.png')";
         } else {
             senderEl.style.color = '#ffffff';
             avatarEl.style.borderColor = '#555555';
-            avatarEl.style.backgroundImage = "none";
+            avatarImgEl.style.backgroundImage = "none";
         }
 
         // Подставляем текст и сбрасываем стили
@@ -683,14 +686,14 @@ class MainWorkspaceScene extends Phaser.Scene {
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
-                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #ff8a65; background-image: url('assets/images/jora.png'); background-size: cover; background-position: center; color: transparent;"></div>
+                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #ff8a65; overflow: hidden; position: relative;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/jora.png'); background-size: cover; background-position: center;"></div></div>
                         <div class="colleague-info">
                             <h4>Жорик <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Минус 5 баллов</span></h4>
                             <p>Весельчак и душа компании. Отлично шарит в компьютерах, но часто подходит к работе слишком легкомысленно.</p>
                         </div>
                     </div>
                     <div class="colleague-card">
-                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #4fc3f7; background-image: url('assets/images/magistr.png'); background-size: cover; background-position: center; color: transparent;"></div>
+                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #4fc3f7; overflow: hidden; position: relative;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/magistr.png'); background-size: cover; background-position: center;"></div></div>
                         <div class="colleague-info">
                             <h4>Магистр <span class="badge-penalty">Минус 10 баллов</span></h4>
                             <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть.</p>
@@ -832,24 +835,25 @@ class MainWorkspaceScene extends Phaser.Scene {
             .contact-list-container { width: 300px; padding-top: 10px; font-family: 'Segoe UI', Arial, sans-serif; user-select: none; }
             .contact-item { display: flex; align-items: center; padding: 10px 20px; cursor: pointer; border-bottom: 1px solid #0e1621; transition: background 0.15s; height: 75px; box-sizing: border-box; }
             .contact-item:hover { background: #202e3d; }
-            .contact-ava { width: 54px; height: 54px; border-radius: 50%; background-size: cover; background-position: center; margin-right: 15px; border: 2px solid; flex-shrink: 0; }
+            .contact-ava { width: 54px; height: 54px; border-radius: 50%; margin-right: 15px; border: 2px solid; flex-shrink: 0; overflow: hidden; position: relative; }
+            .contact-ava-img { position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-size: cover; background-position: center; }
             .contact-name { font-size: 18px; font-weight: bold; }
         </style>
         <div class="contact-list-container">
             <div class="contact-item" id="btn-magistr">
-                <div class="contact-ava" style="border-color: #4fc3f7; background-image: url('assets/images/magistr.png');"></div>
+                <div class="contact-ava" style="border-color: #4fc3f7;"><div class="contact-ava-img" style="background-image: url('assets/images/magistr.png');"></div></div>
                 <div class="contact-name" id="status-magistr" style="color: #888888;">Магистр ⚪</div>
             </div>
             <div class="contact-item" id="btn-jora">
-                <div class="contact-ava" style="border-color: #ff8a65; background-image: url('assets/images/jora.png');"></div>
+                <div class="contact-ava" style="border-color: #ff8a65;"><div class="contact-ava-img" style="background-image: url('assets/images/jora.png');"></div></div>
                 <div class="contact-name" id="status-jora" style="color: #888888;">Жорик ⚪</div>
             </div>
             <div class="contact-item" id="btn-acc">
-                <div class="contact-ava" style="border-color: #e57373; background-image: url('assets/images/buhgalter.png');"></div>
+                <div class="contact-ava" style="border-color: #e57373;"><div class="contact-ava-img" style="background-image: url('assets/images/buhgalter.png');"></div></div>
                 <div class="contact-name" id="status-acc" style="color: #00ff00;">Гл. Бухгалтер 🟢</div>
             </div>
             <div class="contact-item" id="btn-dir">
-                <div class="contact-ava" style="border-color: #ba68c8; background-image: url('assets/images/director.png');"></div>
+                <div class="contact-ava" style="border-color: #ba68c8;"><div class="contact-ava-img" style="background-image: url('assets/images/director.png');"></div></div>
                 <div class="contact-name" id="status-dir" style="color: #888888;">Директор ⚪</div>
             </div>
         </div>
@@ -996,7 +1000,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 15px;"><div style="background: #2b5278; color: #fff; padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 56px; height: 56px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 12px; flex-shrink: 0; font-size: 26px;">👨‍💻</div></div>`;
         
         return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 15px;">
-            <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid ${avatarColor}; background-image: url('${avatarImgPath}'); background-size: cover; background-position: center; flex-shrink: 0; margin-right: 12px;"></div>
+            <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid ${avatarColor}; overflow: hidden; position: relative; flex-shrink: 0; margin-right: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('${avatarImgPath}'); background-size: cover; background-position: center;"></div></div>
             <div style="background: #182533; color: #e4e6eb; padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div>
         </div>`;
     }
