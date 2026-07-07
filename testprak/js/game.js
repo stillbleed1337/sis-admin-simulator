@@ -17,6 +17,7 @@ class BootScene extends Phaser.Scene {
         this.load.image('green', 'assets/images/green.png');
         this.load.image('green2', 'assets/images/green2.png');
         this.load.image('stol', 'assets/images/cafetery.png');
+        this.load.image('barmen', 'assets/images/barmen.png');
         // --- АВАТАРКИ ПЕРСОНАЖЕЙ ---
         this.load.image('ava_director', 'assets/images/director.png');
         this.load.image('ava_buhgalter', 'assets/images/buhgalter.png');
@@ -85,7 +86,36 @@ class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     
     create() {
-        this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
+       this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
+
+        // === ДОБАВЛЯЕМ БАРМЕНА ЗА СТОЙКУ ===
+        let maskShape = this.make.graphics();
+        maskShape.fillRect(0, 0, 1280, 518); 
+        let barmenMask = maskShape.createGeometryMask();
+
+        this.barmen = this.add.image(250, 525, 'barmen').setDepth(1).setScale(0.4);
+        
+        // --- РАБОТА СО СВЕТОМ ---
+        // Накладываем теплый золотисто-оранжевый оттенок, имитируя свет из окна
+        this.barmen.setTint(0xffdfb3); 
+        
+        // Если на оригинальной картинке свет падает с другой стороны, 
+        // раскомментируй строку ниже, чтобы развернуть бармена лицом к свету:
+        // this.barmen.setFlipX(true); 
+
+        // Надеваем маску
+        this.barmen.setMask(barmenMask);
+
+        // --- НОВОЕ ДЫХАНИЕ (под масштаб 0.4) ---
+        this.tweens.add({
+            targets: this.barmen,
+            scaleY: 0.404,  // Очень мягкое растяжение (отталкиваемся от базовых 0.4)
+            y: 523,         // Приподнимается всего на 2 пикселя (от 525)
+            duration: 2500, // Медленный, спокойный вдох
+            yoyo: true,     // Плавный возврат
+            repeat: -1,     // Бесконечно
+            ease: 'Sine.easeInOut' // Смягчение в начале и конце
+        });
 
         this.wires = [
             { id: 'wo',  name: 'БО', texture: 'orange' },   
@@ -126,6 +156,15 @@ class IntroScene extends Phaser.Scene {
         
         this.createDialogUI();
         this.initTest();
+
+        this.time.delayedCall(500, () => {
+            this.showDialog('Бармен', [
+                'Привет! Добро пожаловать в наше IT-кафе при дата-центре.',
+                'Слушай, тут твои друзья-сисадмины заказали фирменный сет мороженого из 8 шариков.',
+                'Просили расставить цвета строго в правильной последовательности, иначе, говорят, "линк не поднимется".',
+                'Поможешь собрать заказ? Кликай по стаканчикам в правильном порядке!'
+            ]);
+        });
     }
 
     // === 1. СОЗДАНИЕ ЧИСТОГО HTML ДИАЛОГА ===
@@ -169,6 +208,9 @@ class IntroScene extends Phaser.Scene {
 
         senderEl.innerText = sender;
         
+        avatarImgEl.style.backgroundPosition = "center";
+        avatarImgEl.style.backgroundSize = "cover";
+
         if (sender === 'Жорик') {
             senderEl.style.color = '#ff8a65';
             avatarEl.style.borderColor = '#ff8a65';
@@ -185,6 +227,18 @@ class IntroScene extends Phaser.Scene {
             senderEl.style.color = '#e57373';
             avatarEl.style.borderColor = '#e57373';
             avatarImgEl.style.backgroundImage = "url('assets/images/buhgalter.png')";
+        } else if (sender === 'Бармен') {
+            senderEl.style.color = '#ffb74d';
+            avatarEl.style.borderColor = '#ffb74d';
+            avatarImgEl.style.backgroundImage = "url('assets/images/barmen.png')";
+            
+            // === МАГИЯ ТУТ: Опускаем картинку, чтобы было видно лицо ===
+            // Значение "center 10%" означает: по горизонтали центр, по вертикали отступ 10% сверху
+            avatarImgEl.style.backgroundPosition = "center 20%"; 
+            
+            
+             avatarImgEl.style.backgroundSize = "150%"; 
+            
         } else {
             senderEl.style.color = '#ffffff';
             avatarEl.style.borderColor = '#555555';
