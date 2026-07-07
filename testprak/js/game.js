@@ -17,6 +17,11 @@ class BootScene extends Phaser.Scene {
         this.load.image('green', 'assets/images/green.png');
         this.load.image('green2', 'assets/images/green2.png');
         this.load.image('stol', 'assets/images/cafetery.png');
+        // --- АВАТАРКИ ПЕРСОНАЖЕЙ ---
+        this.load.image('ava_director', 'assets/images/director.png');
+        this.load.image('ava_buhgalter', 'assets/images/buhgalter.png');
+        this.load.image('ava_magistr', 'assets/images/magistr.png');
+        this.load.image('ava_jora', 'assets/images/jora.png');
         
     
         // --- ЗВУКИ ---
@@ -162,9 +167,11 @@ class IntroScene extends Phaser.Scene {
         boxBg.lineStyle(2, 0x2b5278, 1);
         boxBg.strokeRoundedRect(-220, -160, 440, 320, 16);
 
-        // Круглая подложка под аватарку
-        this.dialogAvatarBg = this.add.circle(-150, -100, 32, 0x2b5278);
-        this.dialogAvatarIcon = this.add.text(-150, -100, '👤', { font: '32px Arial' }).setOrigin(0.5);
+
+        this.dialogAvatarBg = this.add.circle(-150, -100, 42, 0x2b5278);
+        
+        // Сама картинка (УБРАЛИ setDisplaySize отсюда)
+        this.dialogAvatarImg = this.add.image(-150, -100, '');
 
         // Имя отправителя
         this.dialogSenderText = this.add.text(-100, -100, 'Отправитель', { 
@@ -191,7 +198,7 @@ class IntroScene extends Phaser.Scene {
             targets: this.dialogHint, alpha: 0.3, yoyo: true, repeat: -1, duration: 800
         });
 
-        this.dialogBox.add([shadow, boxBg, this.dialogAvatarBg, this.dialogAvatarIcon, this.dialogSenderText, line, this.dialogMessageText, this.dialogHint]);
+        this.dialogBox.add([shadow, boxBg, this.dialogAvatarBg, this.dialogAvatarImg, this.dialogSenderText, line, this.dialogMessageText, this.dialogHint]);
         this.dialogOverlay.add([this.dialogBg, this.dialogBox]);
     }
 
@@ -206,22 +213,38 @@ class IntroScene extends Phaser.Scene {
         this.dialogSenderText.setText(sender);
         
         // Настройка аватарок под персонажей (Game Juice)
+       // Настройка аватарок под персонажей (Game Juice)
         if (sender === 'Жорик') {
             this.dialogSenderText.setFill('#ff8a65');
-            this.dialogAvatarBg.setFillStyle(0xff8a65, 0.15); // Полупрозрачный фон цвета персонажа
-            this.dialogAvatarIcon.setText('👾');
+            this.dialogAvatarBg.setFillStyle(0xff8a65, 1); 
+            this.dialogAvatarImg.setTexture('ava_jora');
         } else if (sender === 'Магистр') {
             this.dialogSenderText.setFill('#4fc3f7');
-            this.dialogAvatarBg.setFillStyle(0x4fc3f7, 0.15);
-            this.dialogAvatarIcon.setText('🧙‍♂️');
+            this.dialogAvatarBg.setFillStyle(0x4fc3f7, 1);
+            this.dialogAvatarImg.setTexture('ava_magistr');
         } else if (sender === 'Директор') {
             this.dialogSenderText.setFill('#ffd54f');
-            this.dialogAvatarBg.setFillStyle(0xffd54f, 0.15);
-            this.dialogAvatarIcon.setText('💼');
+            this.dialogAvatarBg.setFillStyle(0xffd54f, 1);
+            this.dialogAvatarImg.setTexture('ava_director');
+        } else if (sender === 'Гл. Бухгалтер') {
+            this.dialogSenderText.setFill('#e57373');
+            this.dialogAvatarBg.setFillStyle(0xe57373, 1);
+            this.dialogAvatarImg.setTexture('ava_buhgalter');
         } else {
             this.dialogSenderText.setFill('#ffffff');
-            this.dialogAvatarBg.setFillStyle(0x555555, 0.15);
-            this.dialogAvatarIcon.setText('👤');
+            this.dialogAvatarBg.setFillStyle(0x555555, 1);
+        }
+
+       // ИСПРАВЛЕНИЕ: Берем ровный квадрат СТРОГО по центру, без искусственного зума!
+        let sW = this.dialogAvatarImg.width;
+        let sH = this.dialogAvatarImg.height;
+        if (sW > 0 && sH > 0) {
+            let cropSize = Math.min(sW, sH); // Полный размер меньшей стороны
+            let cropX = (sW - cropSize) / 2;
+            let cropY = (sH - cropSize) / 2; // Строго по центру, иначе сместятся координаты!
+            
+            this.dialogAvatarImg.setCrop(cropX, cropY, cropSize, cropSize);
+            this.dialogAvatarImg.setScale(68 / cropSize); // Итоговый размер 68px
         }
 
         this.dialogMessageText.setText(this.activeMessages[0]);
@@ -504,8 +527,21 @@ class MainWorkspaceScene extends Phaser.Scene {
                 xterm.open(termElement);
                 xterm.write('Welcome to Linux-Server v2.4\r\nuser@sysadmin:/home/sysadmin$ ');
                 this.vTerm = new VirtualTerminal(xterm, this); 
+
+                // ИСПРАВЛЕНИЕ: Добавляем слушатель клика по терминалу
+                termElement.addEventListener('click', () => {
+                    // Проверяем, что сейчас идет второе задание и мысль еще не показывали
+                    if (this.sysState.progress === GAME_STAGE.DIR_WORKING && !this.sysState.helpThoughtShown) {
+                        this.sysState.helpThoughtShown = true; // Запоминаем, что уже показали
+                        this.showToast('💬 Вы: Задание сложное, наверное нужно набрать команду help в терминале и посмотреть, какие команды доступны...');
+                    }
+                });
             }
         }
+
+        // ИСПРАВЛЕНИЕ: Терминал стартует прозрачным и появляется синхронно с камерой (1000 мс)
+        this.terminalDOM.setAlpha(0);
+// ... остаток кода create()
 
         // ИСПРАВЛЕНИЕ: Терминал стартует прозрачным и появляется синхронно с камерой (1000 мс)
         this.terminalDOM.setAlpha(0);
@@ -525,11 +561,31 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     showToast(msg) {
+        // ИСПРАВЛЕНИЕ: Если мысль уже висит на экране - сносим её и её анимацию
+        if (this.currentToast) {
+            this.currentToast.destroy();
+            if (this.currentToastTween) this.currentToastTween.stop();
+        }
+
         if (msg.startsWith('💬 Вы:')) {
             try { this.sound.play('mumble', { volume: 0.8 }); } catch(e) {}
         }
-        let toast = this.add.text(640, 680, msg, { font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } }).setOrigin(0.5).setDepth(200);
-        this.tweens.add({ targets: toast, alpha: 0, delay: 4000, duration: 1000, onComplete: () => toast.destroy() });
+        
+        // Создаем новую мысль и записываем её в this.currentToast
+        this.currentToast = this.add.text(640, 680, msg, { 
+            font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } 
+        }).setOrigin(0.5).setDepth(200);
+        
+        this.currentToastTween = this.tweens.add({ 
+            targets: this.currentToast, 
+            alpha: 0, 
+            delay: 4000, 
+            duration: 1000, 
+            onComplete: () => {
+                if (this.currentToast) this.currentToast.destroy();
+                this.currentToast = null;
+            } 
+        });
     }
 
     playDing() {
@@ -713,14 +769,14 @@ class MainWorkspaceScene extends Phaser.Scene {
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
-                        <div class="colleague-avatar">👾</div>
+                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #ff8a65; background-image: url('assets/images/jora.png'); background-size: cover; background-position: center; color: transparent;"></div>
                         <div class="colleague-info">
                             <h4>Жорик <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Минус 5 баллов</span></h4>
                             <p>Весельчак и душа компании. Отлично шарит в компьютерах, но часто подходит к работе слишком легкомысленно.</p>
                         </div>
                     </div>
                     <div class="colleague-card">
-                        <div class="colleague-avatar">🧙‍♂️</div>
+                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #4fc3f7; background-image: url('assets/images/magistr.png'); background-size: cover; background-position: center; color: transparent;"></div>
                         <div class="colleague-info">
                             <h4>Магистр <span class="badge-penalty">Минус 10 баллов</span></h4>
                             <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть.</p>
@@ -785,7 +841,7 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.updateKanbanBoard();
                     this.guruStatus.setText('Магистр 🟢').setFill('#00ff00');
                     this.antiGuruStatus.setText('Жорик 🟢').setFill('#00ff00');
-                    this.showToast('💬 Вы: Задание сложное, наверное нужно набрать команду help в терминале и посмотреть, какие команды доступны...');
+                   
                 }
             }
         });
@@ -853,37 +909,49 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.overlayPhone.add([
             bgPhone, appBg, leftPanel, chatHeaderBg, closePhone, 
-            contacts.guru.bg, contacts.guru.avatarBg, contacts.guru.avatarIcon, contacts.guru.statusText, contacts.guru.separator,
-            contacts.antiGuru.bg, contacts.antiGuru.avatarBg, contacts.antiGuru.avatarIcon, contacts.antiGuru.statusText, contacts.antiGuru.separator,
-            contacts.acc.bg, contacts.acc.avatarBg, contacts.acc.avatarIcon, contacts.acc.statusText, contacts.acc.separator,
-            contacts.dir.bg, contacts.dir.avatarBg, contacts.dir.avatarIcon, contacts.dir.statusText, contacts.dir.separator,
+            contacts.guru.bg, contacts.guru.avatarBg, contacts.guru.avatarImg, contacts.guru.statusText, contacts.guru.separator,
+            contacts.antiGuru.bg, contacts.antiGuru.avatarBg, contacts.antiGuru.avatarImg, contacts.antiGuru.statusText, contacts.antiGuru.separator,
+            contacts.acc.bg, contacts.acc.avatarBg, contacts.acc.avatarImg, contacts.acc.statusText, contacts.acc.separator,
+            contacts.dir.bg, contacts.dir.avatarBg, contacts.dir.avatarImg, contacts.dir.statusText, contacts.dir.separator,
             this.chatHeader, this.chatHintBtn, this.chatNextBtn
         ]);
     }
 
-    createContactList() {
-        const createContact = (y, name, color, avatarColor, emoji) => {
-            let bg = this.add.rectangle(-350, y, 300, 65, 0x17212b).setInteractive({ useHandCursor: true });
-            let avatarBg = this.add.circle(-455, y, 22, avatarColor);
-            let avatarIcon = this.add.text(-455, y, emoji, { font: '22px Arial' }).setOrigin(0.5);
-            let statusText = this.add.text(-415, y, name, { font: '17px Arial', fill: color, fontStyle: 'bold' }).setOrigin(0, 0.5);
-            let separator = this.add.rectangle(-350, y + 32, 270, 1, 0x0e1621);
-            return { bg, avatarBg, avatarIcon, statusText, separator };
+   createContactList() {
+        const createContact = (y, name, color, avatarColor, textureKey) => {
+            let bg = this.add.rectangle(-350, y, 300, 75, 0x17212b).setInteractive({ useHandCursor: true });
+            let avatarBg = this.add.circle(-440, y, 30, avatarColor); // Фон-обводка
+            let avatarImg = this.add.image(-440, y, textureKey);
+            
+            // ИСПРАВЛЕНИЕ: Идеально ровный квадрат по центру без искажений координат
+            let sW = avatarImg.width;
+            let sH = avatarImg.height;
+            if (sW > 0 && sH > 0) {
+                let cropSize = Math.min(sW, sH);
+                let cropX = (sW - cropSize) / 2;
+                let cropY = (sH - cropSize) / 2;
+                avatarImg.setCrop(cropX, cropY, cropSize, cropSize);
+                avatarImg.setScale(56 / cropSize); // Размер картинки 56px
+            }
+
+            let statusText = this.add.text(-395, y, name, { font: '18px Arial', fill: color, fontStyle: 'bold' }).setOrigin(0, 0.5);
+            let separator = this.add.rectangle(-350, y + 37, 270, 1, 0x0e1621);
+            return { bg, avatarBg, avatarImg, statusText, separator };
         };
 
-        let guru = createContact(-200, 'Магистр ⚪', '#888888', 0x4fc3f7, '🧙‍♂️');
+        let guru = createContact(-215, 'Магистр ⚪', '#888888', 0x4fc3f7, 'ava_magistr');
         this.guruStatus = guru.statusText;
         guru.bg.on('pointerdown', () => this.openChat('Магистр'));
 
-        let antiGuru = createContact(-135, 'Жорик ⚪', '#888888', 0xff8a65, '👾');
+        let antiGuru = createContact(-140, 'Жорик ⚪', '#888888', 0xff8a65, 'ava_jora');
         this.antiGuruStatus = antiGuru.statusText;
         antiGuru.bg.on('pointerdown', () => this.openChat('Жорик'));
 
-        let acc = createContact(-70, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, '👩‍💼');
+        let acc = createContact(-65, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, 'ava_buhgalter');
         this.accStatus = acc.statusText;
         acc.bg.on('pointerdown', () => this.openChat('Гл. Бухгалтер'));
 
-        let dir = createContact(-5, 'Директор ⚪', '#888888', 0xba68c8, '👔');
+        let dir = createContact(10, 'Директор ⚪', '#888888', 0xba68c8, 'ava_director');
         this.dirStatus = dir.statusText;
         dir.bg.on('pointerdown', () => this.openChat('Директор'));
 
@@ -987,15 +1055,24 @@ class MainWorkspaceScene extends Phaser.Scene {
             if (splitIndex !== -1) { senderName = msg.substring(0, splitIndex); text = msg.substring(splitIndex + 2).trim(); }
         }
 
-        let avatarIcon = '👤', avatarColor = '#555555';
-        if (senderName === 'Гл. Бухгалтер') { avatarIcon = '👩‍💼'; avatarColor = '#e57373'; }
-        else if (senderName === 'Директор') { avatarIcon = '👔'; avatarColor = '#ba68c8'; }
-        else if (senderName === 'Магистр') { avatarIcon = '🧙‍♂️'; avatarColor = '#4fc3f7'; }
-        else if (senderName === 'Жорик') { avatarIcon = '👾'; avatarColor = '#ff8a65'; }
+        let avatarImgPath = ''; 
+        let avatarColor = '#555555';
+        
+        if (senderName === 'Гл. Бухгалтер') { avatarImgPath = 'assets/images/buhgalter.png'; avatarColor = '#e57373'; }
+        else if (senderName === 'Директор') { avatarImgPath = 'assets/images/director.png'; avatarColor = '#ba68c8'; }
+        else if (senderName === 'Магистр') { avatarImgPath = 'assets/images/magistr.png'; avatarColor = '#4fc3f7'; }
+        else if (senderName === 'Жорик') { avatarImgPath = 'assets/images/jora.png'; avatarColor = '#ff8a65'; }
 
         if (isSystem) return `<div style="text-align: center; margin: 15px 0;"><span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span></div>`;
-        if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 12px;"><div style="background: #2b5278; color: #fff; padding: 10px 14px; border-radius: 14px 14px 0 14px; max-width: 65%; font-size: 15px;">${text}</div><div style="width: 36px; height: 36px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 10px; flex-shrink: 0; font-size: 18px;">👨‍💻</div></div>`;
-        return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 12px;"><div style="width: 36px; height: 36px; border-radius: 50%; background: ${avatarColor}; display: flex; justify-content: center; align-items: center; margin-right: 10px; flex-shrink: 0; font-size: 18px;">${avatarIcon}</div><div style="background: #182533; color: #e4e6eb; padding: 10px 14px; border-radius: 14px 14px 14px 0; max-width: 65%; font-size: 15px; border: 1px solid #22303f;">${text}</div></div>`;
+        
+        // Исходящие сообщения (Сисадмин)
+        if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 15px;"><div style="background: #2b5278; color: #fff; padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 56px; height: 56px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 12px; flex-shrink: 0; font-size: 26px;">👨‍💻</div></div>`;
+        
+        // Входящие сообщения (NPC)
+        return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 15px;">
+            <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid ${avatarColor}; background-image: url('${avatarImgPath}'); background-size: cover; background-position: center; flex-shrink: 0; margin-right: 12px;"></div>
+            <div style="background: #182533; color: #e4e6eb; padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div>
+        </div>`;
     }
 
     buyHint(data) {
