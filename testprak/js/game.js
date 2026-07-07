@@ -208,6 +208,7 @@ class IntroScene extends Phaser.Scene {
 
         senderEl.innerText = sender;
         
+        // === ВАЖНО: Сбрасываем позицию для всех остальных! ===
         avatarImgEl.style.backgroundPosition = "center";
         avatarImgEl.style.backgroundSize = "cover";
 
@@ -232,12 +233,12 @@ class IntroScene extends Phaser.Scene {
             avatarEl.style.borderColor = '#ffb74d';
             avatarImgEl.style.backgroundImage = "url('assets/images/barmen.png')";
             
-            // === МАГИЯ ТУТ: Опускаем картинку, чтобы было видно лицо ===
-            // Значение "center 10%" означает: по горизонтали центр, по вертикали отступ 10% сверху
-            avatarImgEl.style.backgroundPosition = "center 20%"; 
+            // === ЖЕСТКАЯ ПРИВЯЗКА В ПИКСЕЛЯХ ===
+            // Сдвигаем фон вниз ровно на 20 пикселей, чтобы вытащить макушку из-под обрезки
+            avatarImgEl.style.backgroundPosition = "center 20px"; 
             
-            
-             avatarImgEl.style.backgroundSize = "150%"; 
+            // Настраиваем зум (если лицо мелкое — ставь 180%, если крупное — 120%)
+            avatarImgEl.style.backgroundSize = "150%"; 
             
         } else {
             senderEl.style.color = '#ffffff';
