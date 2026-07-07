@@ -1,5 +1,5 @@
 // ==========================================
-// ОСНОВНАЯ ИГРА (game.js) - ИСПРАВЛЕННЫЙ UI И АНИМАЦИИ
+// ОСНОВНАЯ ИГРА (game.js) - ИДЕАЛЬНЫЙ HTML UI
 // ==========================================
 
 class BootScene extends Phaser.Scene {
@@ -23,7 +23,6 @@ class BootScene extends Phaser.Scene {
         this.load.image('ava_magistr', 'assets/images/magistr.png');
         this.load.image('ava_jora', 'assets/images/jora.png');
         
-    
         // --- ЗВУКИ ---
         this.load.audio('clickIce', 'assets/sounds/click_icecream.wav');
         this.load.audio('unclickIce', 'assets/sounds/Close_Click_icecream.wav');
@@ -44,9 +43,6 @@ class BootScene extends Phaser.Scene {
     }
 }
 
-// ==========================================
-// НОВАЯ СЦЕНА: ГЛОБАЛЬНЫЙ UI И ЗВУК
-// ==========================================
 class UIScene extends Phaser.Scene {
     constructor() { super('UIScene'); }
     create() {
@@ -76,13 +72,10 @@ class UIScene extends Phaser.Scene {
 
         this.input.on('drag', (pointer, gameObject, dragX, dragY) => {
             if (gameObject !== knob) return;
-            
             let newX = Phaser.Math.Clamp(dragX, sliderX, sliderX + sliderWidth);
             knob.x = newX;
-            
             let percent = (newX - sliderX) / sliderWidth;
             fill.width = sliderWidth * percent;
-            
             this.sound.volume = percent; 
         });
     }
@@ -92,19 +85,17 @@ class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     
     create() {
-        // Отображаем фоновую картинку стола на весь экран
         this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
 
-        // ИСПРАВЛЕНИЕ: Жёстко связываем буквы (жилы кабеля) с правильными цветами картинок мороженого
         this.wires = [
-            { id: 'wo',  name: 'БО', texture: 'orange' },   // Бело-Оранжевый кабель -> картинка orange
-            { id: 'o',   name: 'О',  texture: 'orange2' },  // Оранжевый кабель -> картинка orange2
-            { id: 'wg',  name: 'БЗ', texture: 'green' },    // Бело-Зеленый кабель -> картинка green
-            { id: 'b',   name: 'С',  texture: 'blue2' },     // Синий кабель -> картинка blue
-            { id: 'wb',  name: 'БС', texture: 'blue' },    // Бело-Синий кабель -> картинка blue2
-            { id: 'g',   name: 'З',  texture: 'green2' },   // Зеленый кабель -> картинка green2
-            { id: 'wbr', name: 'БК', texture: 'brown' },    // Бело-Коричневый кабель -> картинка brown
-            { id: 'br',  name: 'К',  texture: 'brown2' }    // Коричневый кабель -> картинка brown2
+            { id: 'wo',  name: 'БО', texture: 'orange' },   
+            { id: 'o',   name: 'О',  texture: 'orange2' },  
+            { id: 'wg',  name: 'БЗ', texture: 'green' },    
+            { id: 'b',   name: 'С',  texture: 'blue2' },     
+            { id: 'wb',  name: 'БС', texture: 'blue' },    
+            { id: 'g',   name: 'З',  texture: 'green2' },   
+            { id: 'wbr', name: 'БК', texture: 'brown' },    
+            { id: 'br',  name: 'К',  texture: 'brown2' }    
         ];
         
         this.solutionT568B = ['wo', 'o', 'wg', 'b', 'wb', 'g', 'wbr', 'br'];
@@ -119,7 +110,6 @@ class IntroScene extends Phaser.Scene {
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.score, { font: GAME_CONFIG.FONTS.large, fill: GAME_CONFIG.COLORS.yellow, fontStyle: 'bold' });
         const skipBtn = this.add.text(1250, 70, '[ ПРОПУСТИТЬ ТЕСТ ]', { font: '18px Arial', fill: '#dddddd' }).setOrigin(1, 0).setInteractive({ useHandCursor: true });
         skipBtn.on('pointerdown', () => { 
-            // Плавно уводим экран в черный за полсекунды
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.scene.start('MainWorkspaceScene', { currentScore: this.score }); 
@@ -128,177 +118,127 @@ class IntroScene extends Phaser.Scene {
         this.add.text(640, 60, 'ПРОВЕРКА КВАЛИФИКАЦИИ', { font: '32px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 4 }).setOrigin(0.5);
         this.add.text(640, 100, 'В какой последовательности вы порекомендуете мороженое друзьям?', { font: '22px Arial', fill: '#ffffff', fontStyle: 'bold', stroke: '#000000', strokeThickness: 2 }).setOrigin(0.5);
         
-        // ИСПРАВЛЕНИЕ: Улучшенное качество и стиль надписи
         this.selectionText = this.add.text(640, 560, 'Ваш выбор: ', { 
-            fontFamily: 'Arial', 
-            fontSize: '24px', 
-            fontWeight: 'bold',
-            fill: '#ffffff', 
-            stroke: '#000000', 
-            strokeThickness: 2 
+            fontFamily: 'Arial', fontSize: '24px', fontWeight: 'bold', fill: '#ffffff', stroke: '#000000', strokeThickness: 2 
         }).setOrigin(0.5).setShadow(2, 2, '#000000', 4, true, true);
         
         this.statusText = this.add.text(640, 640, '', { font: '26px Arial', fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5);
+        
         this.createDialogUI();
         this.initTest();
     }
 
-    // === 1. СОЗДАНИЕ УЛУЧШЕННОГО ИНТЕРФЕЙСА ДИАЛОГОВ ===
+    // === 1. СОЗДАНИЕ ЧИСТОГО HTML ДИАЛОГА ===
     createDialogUI() {
         this.dialogOverlay = this.add.container(640, 360).setDepth(100).setVisible(false);
-        this.isDialogClosing = false; // Блокировка от спам-кликов
+        this.isDialogClosing = false;
         
-        // Темный фон (чуть прозрачнее, чтобы не полностью перекрывать игру)
         this.dialogBg = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.6).setInteractive();
         this.dialogBg.on('pointerdown', () => this.advanceDialog());
+        this.dialogOverlay.add(this.dialogBg);
 
-        // Внутренний контейнер для анимации самого окна
-        this.dialogBox = this.add.container(0, 0);
+        let dialogHTML = `
+        <div id="html-dialog-box" style="width: 460px; background: #17212b; border: 2px solid #2b5278; border-radius: 16px; box-shadow: 12px 12px 0px rgba(0,0,0,0.4); display: flex; flex-direction: column; align-items: center; position: relative; font-family: 'Segoe UI', Arial, sans-serif; box-sizing: border-box; padding: 25px 20px 45px 20px;">
+            <div style="display: flex; align-items: center; width: 100%; margin-bottom: 20px;">
+                <div id="html-dialog-avatar" style="width: 72px; height: 72px; border-radius: 50%; border: 3px solid #555555; background-size: 135%; background-position: center 20%; flex-shrink: 0; margin-left: 10px;"></div>
+                <div id="html-dialog-sender" style="font-size: 24px; font-weight: bold; color: #ffffff; margin-left: 20px;">Отправитель</div>
+            </div>
+            <div style="width: 100%; height: 1px; background: #242f3d; margin-bottom: 25px;"></div>
+            <div id="html-dialog-text" style="font-size: 20px; color: #e4e6eb; text-align: center; width: 95%; line-height: 1.5; transition: all 0.15s ease-out; transform: scale(1); opacity: 1; min-height: 80px; display: flex; align-items: center; justify-content: center;">Текст сообщения...</div>
+            <div style="position: absolute; bottom: 15px; font-size: 14px; color: #6ab2f2; font-style: italic; animation: pulse 1.5s infinite; cursor: pointer; user-select: none;">Кликни, чтобы продолжить ▼</div>
+        </div>
+        <style>@keyframes pulse { 0% {opacity: 0.3;} 50% {opacity: 1;} 100% {opacity: 0.3;} }</style>
+        `;
 
-        // Мягкая тень
-        const shadow = this.add.graphics();
-        shadow.fillStyle(0x000000, 0.4);
-        shadow.fillRoundedRect(-220 + 12, -160 + 12, 440, 320, 16);
-
-        // Основной фон (стиль темной темы Telegram/Discord)
-        const boxBg = this.add.graphics();
-        boxBg.fillStyle(0x17212b, 1); 
-        boxBg.fillRoundedRect(-220, -160, 440, 320, 16);
-        boxBg.lineStyle(2, 0x2b5278, 1);
-        boxBg.strokeRoundedRect(-220, -160, 440, 320, 16);
-
-
-        this.dialogAvatarBg = this.add.circle(-150, -100, 42, 0x2b5278);
-        
-        // Сама картинка (УБРАЛИ setDisplaySize отсюда)
-        this.dialogAvatarImg = this.add.image(-150, -100, '');
-
-        // Имя отправителя
-        this.dialogSenderText = this.add.text(-100, -100, 'Отправитель', { 
-            font: 'bold 24px Arial', fill: '#ffffff' 
-        }).setOrigin(0, 0.5);
-
-        // Тонкий разделитель
-        const line = this.add.graphics();
-        line.lineStyle(1, 0x242f3d, 1);
-        line.lineBetween(-220, -45, 220, -45);
-
-        // Текст сообщения
-        this.dialogMessageText = this.add.text(0, 40, 'Текст сообщения', { 
-            font: '20px Arial', fill: '#e4e6eb', wordWrap: { width: 380 }, align: 'center', lineSpacing: 6
-        }).setOrigin(0.5);
-
-        // Подсказка "Кликни дальше" (пульсирующая)
-        this.dialogHint = this.add.text(0, 135, 'Кликни, чтобы продолжить ▼', { 
-            font: 'italic 14px Arial', fill: '#6ab2f2' 
-        }).setOrigin(0.5);
-
-        // Анимация пульсации подсказки
-        this.tweens.add({
-            targets: this.dialogHint, alpha: 0.3, yoyo: true, repeat: -1, duration: 800
-        });
-
-        this.dialogBox.add([shadow, boxBg, this.dialogAvatarBg, this.dialogAvatarImg, this.dialogSenderText, line, this.dialogMessageText, this.dialogHint]);
-        this.dialogOverlay.add([this.dialogBg, this.dialogBox]);
+        this.htmlDialogDOM = this.add.dom(640, 360).createFromHTML(dialogHTML).setDepth(101).setVisible(false);
     }
 
-    // === 2. ВЫЗОВ ДИАЛОГА С АНИМАЦИЕЙ ===
-    // === 2. ВЫЗОВ ДИАЛОГА С АНИМАЦИЕЙ ===
+    // === 2. ВЫЗОВ HTML ДИАЛОГА ===
     showDialog(sender, messages, isGameOver = false) {
         this.isGameOverState = isGameOver; 
         this.activeMessages = messages; 
         this.currentMessageIndex = 0;
         this.isDialogClosing = false;
 
-        this.dialogSenderText.setText(sender);
+        let avatarEl = document.getElementById('html-dialog-avatar');
+        let senderEl = document.getElementById('html-dialog-sender');
+        let textEl = document.getElementById('html-dialog-text');
+
+        senderEl.innerText = sender;
         
-        // Настройка аватарок под персонажей (Game Juice)
-       // Настройка аватарок под персонажей (Game Juice)
         if (sender === 'Жорик') {
-            this.dialogSenderText.setFill('#ff8a65');
-            this.dialogAvatarBg.setFillStyle(0xff8a65, 1); 
-            this.dialogAvatarImg.setTexture('ava_jora');
+            senderEl.style.color = '#ff8a65';
+            avatarEl.style.borderColor = '#ff8a65';
+            avatarEl.style.backgroundImage = "url('assets/images/jora.png')";
         } else if (sender === 'Магистр') {
-            this.dialogSenderText.setFill('#4fc3f7');
-            this.dialogAvatarBg.setFillStyle(0x4fc3f7, 1);
-            this.dialogAvatarImg.setTexture('ava_magistr');
+            senderEl.style.color = '#4fc3f7';
+            avatarEl.style.borderColor = '#4fc3f7';
+            avatarEl.style.backgroundImage = "url('assets/images/magistr.png')";
         } else if (sender === 'Директор') {
-            this.dialogSenderText.setFill('#ffd54f');
-            this.dialogAvatarBg.setFillStyle(0xffd54f, 1);
-            this.dialogAvatarImg.setTexture('ava_director');
+            senderEl.style.color = '#ffd54f';
+            avatarEl.style.borderColor = '#ffd54f';
+            avatarEl.style.backgroundImage = "url('assets/images/director.png')";
         } else if (sender === 'Гл. Бухгалтер') {
-            this.dialogSenderText.setFill('#e57373');
-            this.dialogAvatarBg.setFillStyle(0xe57373, 1);
-            this.dialogAvatarImg.setTexture('ava_buhgalter');
+            senderEl.style.color = '#e57373';
+            avatarEl.style.borderColor = '#e57373';
+            avatarEl.style.backgroundImage = "url('assets/images/buhgalter.png')";
         } else {
-            this.dialogSenderText.setFill('#ffffff');
-            this.dialogAvatarBg.setFillStyle(0x555555, 1);
+            senderEl.style.color = '#ffffff';
+            avatarEl.style.borderColor = '#555555';
+            avatarEl.style.backgroundImage = "none";
         }
 
-       // ИСПРАВЛЕНИЕ: Берем ровный квадрат СТРОГО по центру, без искусственного зума!
-        let sW = this.dialogAvatarImg.width;
-        let sH = this.dialogAvatarImg.height;
-        if (sW > 0 && sH > 0) {
-            let cropSize = Math.min(sW, sH); // Полный размер меньшей стороны
-            let cropX = (sW - cropSize) / 2;
-            let cropY = (sH - cropSize) / 2; // Строго по центру, иначе сместятся координаты!
-            
-            this.dialogAvatarImg.setCrop(cropX, cropY, cropSize, cropSize);
-            this.dialogAvatarImg.setScale(68 / cropSize); // Итоговый размер 68px
-        }
-
-        this.dialogMessageText.setText(this.activeMessages[0]);
+        // Подставляем текст и сбрасываем стили
+        textEl.innerText = this.activeMessages[0];
+        textEl.style.transform = 'scale(1)';
+        textEl.style.opacity = '1';
         
-        // ВОЗВРАЩАЕМ ЗВУКИ: Открытие окна и звук первого сообщения
         this.sound.play('openClick');
         this.sound.play('popMsg');
 
-        // --- Анимация появления ---
         this.dialogOverlay.setVisible(true);
         this.dialogBg.setAlpha(0);
-        this.dialogBox.setScale(0.7).setAlpha(0).setY(40); // Окно выплывает немного снизу
+        
+        this.htmlDialogDOM.setVisible(true).setAlpha(0).setScale(0.7).setY(400); 
 
         this.tweens.add({ targets: this.dialogBg, alpha: 1, duration: 250 });
         this.tweens.add({ 
-            targets: this.dialogBox, scale: 1, alpha: 1, y: 0, 
-            duration: 400, ease: 'Back.out' // Эффект приятной отдачи
+            targets: this.htmlDialogDOM, scale: 1, alpha: 1, y: 360, 
+            duration: 400, ease: 'Back.out' 
         });
     }
 
-    // === 3. ПЕРЕКЛЮЧЕНИЕ ФРАЗ И ЗАКРЫТИЕ ===
+    // === 3. ПЕРЕКЛЮЧЕНИЕ ФРАЗ ===
     advanceDialog() {
-        if (this.isDialogClosing) return; // Защита от спам-кликов
+        if (this.isDialogClosing) return; 
 
         this.currentMessageIndex++;
+        let textEl = document.getElementById('html-dialog-text');
         
         if (this.currentMessageIndex < this.activeMessages.length) {
-            // ВОЗВРАЩАЕМ ЗВУКИ: Звук каждого следующего сообщения
             this.sound.play('popMsg');
 
-            // Микро-анимация смены текста ("вспышка" размера)
-            this.dialogMessageText.setText(this.activeMessages[this.currentMessageIndex]);
-            this.dialogMessageText.setScale(0.9);
-            this.dialogMessageText.setAlpha(0.5);
-            this.tweens.add({ 
-                targets: this.dialogMessageText, scale: 1, alpha: 1, 
-                duration: 200, ease: 'Back.out' 
-            });
-        } else {
-            // ВОЗВРАЩАЕМ ЗВУКИ: Звук закрытия окна
-            this.sound.play('closeClick');
+            // CSS-микроанимация текста
+            textEl.style.transform = 'scale(0.95)';
+            textEl.style.opacity = '0.5';
+            
+            setTimeout(() => {
+                textEl.innerText = this.activeMessages[this.currentMessageIndex];
+                textEl.style.transform = 'scale(1)';
+                textEl.style.opacity = '1';
+            }, 150);
 
-            // --- Анимация закрытия ---
+        } else {
+            this.sound.play('closeClick');
             this.isDialogClosing = true;
+            
             this.tweens.add({ targets: this.dialogBg, alpha: 0, duration: 200 });
             this.tweens.add({
-                targets: this.dialogBox, scale: 0.8, alpha: 0, y: 20, 
+                targets: this.htmlDialogDOM, scale: 0.8, alpha: 0, y: 380, 
                 duration: 200, ease: 'Power2',
                 onComplete: () => {
                     this.dialogOverlay.setVisible(false);
-                    // Возвращаем переменные в норму для следующих диалогов
-                    this.dialogBox.setScale(1).setAlpha(1).setY(0); 
-                    
-                    // Логика игры после диалога
+                    this.htmlDialogDOM.setVisible(false);
                     if (this.isGameOverState) this.scene.restart(); else this.initTest();
                 }
             });
@@ -315,7 +255,6 @@ class IntroScene extends Phaser.Scene {
         
         let shuffled = [...this.wires].sort(() => Math.random() - 0.5);
         
-        // Идеальный центр для 8 элементов с отступом 110
         const startX = 255; 
         const spacing = 110; 
         const targetY = 500; 
@@ -324,17 +263,14 @@ class IntroScene extends Phaser.Scene {
             let container = this.add.container(startX + (index * spacing), targetY);
             container.setDepth(2); 
 
-            // 1. Тень под размер 85
             let shadow = this.add.image(4, 6, wire.texture);
             shadow.setDisplaySize(75, 75);
             shadow.setTint(0x000000); 
             shadow.setAlpha(0.35);    
 
-            // 2. Мороженое размером 85
             let iceCream = this.add.image(0, 0, wire.texture);
             iceCream.setDisplaySize(75, 75); 
             
-            // 3. Зона клика размером 85
             let hitArea = this.add.rectangle(0, 0, 75, 75, 0x000000, 0).setInteractive({ useHandCursor: true });
             
             container.add([shadow, iceCream, hitArea]);
@@ -358,8 +294,6 @@ class IntroScene extends Phaser.Scene {
             this.sound.play('clickIce'); 
         }
         
-        // Тут логика поиска по имени для строки «Ваш выбор» работает отлично, 
-        // так как данные берутся из оригинального массива this.wires в памяти
         let currentString = this.playerSelection.map(id => this.wires.find(w => w.id === id).name).join('-');
         this.selectionText.setText('Ваш выбор: ' + currentString);
         
@@ -371,7 +305,6 @@ class IntroScene extends Phaser.Scene {
             if (isSuccessB || isSuccessA) {
                 this.statusText.setText('УСПЕХ! ВЫ ПРОШЛИ ТЕСТ.').setFill('#00ff00');
                 
-                // ИСПРАВЛЕНИЕ: Плавный уход в темноту при победе
                 this.time.delayedCall(1000, () => { 
                     this.cameras.main.fadeOut(1000, 0, 0, 0);
                     this.cameras.main.once('camerafadeoutcomplete', () => {
@@ -400,6 +333,7 @@ class IntroScene extends Phaser.Scene {
         }
     }
 }
+
 class MainWorkspaceScene extends Phaser.Scene {
     constructor() { super('MainWorkspaceScene'); }
     
@@ -414,7 +348,8 @@ class MainWorkspaceScene extends Phaser.Scene {
             handbookRead: false,
             pingAccDone: false,
             pingNeighborDone: false,
-            pingYaRuDone: false 
+            pingYaRuDone: false,
+            helpThoughtShown: false
         };
 
         this.chatData = {
@@ -528,28 +463,18 @@ class MainWorkspaceScene extends Phaser.Scene {
                 xterm.write('Welcome to Linux-Server v2.4\r\nuser@sysadmin:/home/sysadmin$ ');
                 this.vTerm = new VirtualTerminal(xterm, this); 
 
-                // ИСПРАВЛЕНИЕ: Добавляем слушатель клика по терминалу
                 termElement.addEventListener('click', () => {
-                    // Проверяем, что сейчас идет второе задание и мысль еще не показывали
                     if (this.sysState.progress === GAME_STAGE.DIR_WORKING && !this.sysState.helpThoughtShown) {
-                        this.sysState.helpThoughtShown = true; // Запоминаем, что уже показали
+                        this.sysState.helpThoughtShown = true; 
                         this.showToast('💬 Вы: Задание сложное, наверное нужно набрать команду help в терминале и посмотреть, какие команды доступны...');
                     }
                 });
             }
         }
 
-        // ИСПРАВЛЕНИЕ: Терминал стартует прозрачным и появляется синхронно с камерой (1000 мс)
-        this.terminalDOM.setAlpha(0);
-// ... остаток кода create()
-
-        // ИСПРАВЛЕНИЕ: Терминал стартует прозрачным и появляется синхронно с камерой (1000 мс)
         this.terminalDOM.setAlpha(0);
         this.tweens.add({
-            targets: this.terminalDOM,
-            alpha: 1,
-            duration: 1000,
-            ease: 'Power2' // Power2 делает эффект растворения более мягким
+            targets: this.terminalDOM, alpha: 1, duration: 1000, ease: 'Power2' 
         });
 
         this.startWorkingDay();
@@ -561,7 +486,6 @@ class MainWorkspaceScene extends Phaser.Scene {
     }
 
     showToast(msg) {
-        // ИСПРАВЛЕНИЕ: Если мысль уже висит на экране - сносим её и её анимацию
         if (this.currentToast) {
             this.currentToast.destroy();
             if (this.currentToastTween) this.currentToastTween.stop();
@@ -571,16 +495,12 @@ class MainWorkspaceScene extends Phaser.Scene {
             try { this.sound.play('mumble', { volume: 0.8 }); } catch(e) {}
         }
         
-        // Создаем новую мысль и записываем её в this.currentToast
         this.currentToast = this.add.text(640, 680, msg, { 
             font: '20px Arial', fill: '#fff', backgroundColor: '#000000aa', padding: { x: 10, y: 10 } 
         }).setOrigin(0.5).setDepth(200);
         
         this.currentToastTween = this.tweens.add({ 
-            targets: this.currentToast, 
-            alpha: 0, 
-            delay: 4000, 
-            duration: 1000, 
+            targets: this.currentToast, alpha: 0, delay: 4000, duration: 1000, 
             onComplete: () => {
                 if (this.currentToast) this.currentToast.destroy();
                 this.currentToast = null;
@@ -619,8 +539,8 @@ class MainWorkspaceScene extends Phaser.Scene {
         if (this.sysState.progress === GAME_STAGE.DIR_CHECKING) {
             this.playDing();
             if (!this.sysState.pingYaRuDone) {
-                this.updateScore(-5);
-                this.showToast('Штраф -5 баллов: Не проверен ping интернета с вашего ПК!');
+                this.updateScore(-GAME_CONFIG.SCORES.mistakePenalty1);
+                this.showToast(`Штраф -${GAME_CONFIG.SCORES.mistakePenalty1} баллов: Не проверен ping интернета с вашего ПК!`);
             } else {
                 this.showToast('Антивирус запущен! Сообщите Директору в чате.');
             }
@@ -637,13 +557,8 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.sound.play('openClick'); 
         
         this.tweens.add({
-            targets: this.terminalDOM,
-            alpha: 0,
-            duration: 150,
-            ease: 'Power2',
-            onComplete: () => {
-                this.terminalDOM.setVisible(false);
-            }
+            targets: this.terminalDOM, alpha: 0, duration: 150, ease: 'Power2',
+            onComplete: () => { this.terminalDOM.setVisible(false); }
         });
         
         this.scene.setVisible(false, 'UIScene');
@@ -652,10 +567,16 @@ class MainWorkspaceScene extends Phaser.Scene {
         overlayTarget.setVisible(true); 
         this.tweens.add({ targets: overlayTarget, alpha: 1, duration: 250, ease: 'Power2' });
 
-        if (overlayTarget === this.overlayPhone && this.chatDOM) {
-            this.chatDOM.setAlpha(0);
-            this.chatDOM.setVisible(true);
-            this.tweens.add({ targets: this.chatDOM, alpha: 1, duration: 250, ease: 'Power2' });
+        if (overlayTarget === this.overlayPhone) {
+            if (this.chatDOM) {
+                this.chatDOM.setAlpha(0).setVisible(true);
+                this.tweens.add({ targets: this.chatDOM, alpha: 1, duration: 250, ease: 'Power2' });
+            }
+            // ПОКАЗЫВАЕМ HTML СПИСОК КОНТАКТОВ
+            if (this.contactsDOM) {
+                this.contactsDOM.setAlpha(0).setVisible(true);
+                this.tweens.add({ targets: this.contactsDOM, alpha: 1, duration: 250, ease: 'Power2' });
+            }
 
             if (this.activeContact) {
                 this.renderChat();
@@ -667,17 +588,16 @@ class MainWorkspaceScene extends Phaser.Scene {
     closeOverlay(overlayTarget) { 
         this.sound.play('closeClick'); 
 
-        if (overlayTarget === this.overlayPhone && this.chatDOM) {
-            this.tweens.add({ targets: this.chatDOM, alpha: 0, duration: 150 });
+        if (overlayTarget === this.overlayPhone) {
+            if (this.chatDOM) this.tweens.add({ targets: this.chatDOM, alpha: 0, duration: 150 });
+            // ПРЯЧЕМ HTML СПИСОК КОНТАКТОВ
+            if (this.contactsDOM) this.tweens.add({ targets: this.contactsDOM, alpha: 0, duration: 150 });
         }
 
         this.terminalDOM.setAlpha(0);
         this.terminalDOM.setVisible(true);
         this.tweens.add({
-            targets: this.terminalDOM,
-            alpha: 1,
-            duration: 250,
-            ease: 'Power2'
+            targets: this.terminalDOM, alpha: 1, duration: 250, ease: 'Power2'
         });
 
         this.tweens.add({
@@ -688,9 +608,9 @@ class MainWorkspaceScene extends Phaser.Scene {
                 overlayTarget.setVisible(false); 
                 overlayTarget.setAlpha(1); 
                 
-                if (overlayTarget === this.overlayPhone && this.chatDOM) {
-                    this.chatDOM.setVisible(false);
-                    this.chatDOM.setAlpha(1);
+                if (overlayTarget === this.overlayPhone) {
+                    if (this.chatDOM) { this.chatDOM.setVisible(false); this.chatDOM.setAlpha(1); }
+                    if (this.contactsDOM) { this.contactsDOM.setVisible(false); this.contactsDOM.setAlpha(1); }
                 }
                 
                 this.scene.setVisible(true, 'UIScene');
@@ -718,7 +638,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         let bgMap = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
         
         let contentContainer = this.add.container(0, 0);
-
         let schemeImg = this.add.image(0, 0, 'network_map');
         schemeImg.setDisplaySize(1000, 562); 
         let frameMap = this.add.rectangle(0, 0, 1004, 566).setStrokeStyle(4, 0x2b5278);
@@ -729,7 +648,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         
         contentContainer.add([schemeImg, frameMap, closeMap]);
         this.overlayMap.add([bgMap, contentContainer]);
-        
         this.overlayMap.contentContainer = contentContainer;
 
         closeMap.on('pointerdown', () => {
@@ -740,7 +658,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.overlayBook = this.add.container(640, 360).setDepth(100).setVisible(false);
         let bgBook = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
 
-        // ИСПРАВЛЕНИЕ: Добавлен 4-й пункт с локальным администратором
         let bookHTML = `
         <div class="book-window">
             <div class="book-header">
@@ -748,7 +665,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                 <div class="book-close-btn" id="book-close-x">✖</div>
             </div>
             <div class="book-content">
-                
                 <div class="book-section">
                     <h3>🎮 ПРАВИЛА ИГРЫ</h3>
                     <ol class="book-list">
@@ -757,7 +673,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                         <li><strong>Решайте инциденты:</strong> Проводите диагностику через Linux-терминал.</li>
                     </ol>
                 </div>
-
                 <div class="book-section" style="border-left-color: #4fc3f7;">
                     <h3>🖥️ ИНФОРМАЦИЯ ПО СЕРВЕРАМ</h3>
                     <ul class="book-list">
@@ -765,7 +680,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                         <li style="color: #ff8a65;"><strong>Внимание:</strong> Если не установлен или не запущен антивирус Касперского на рабочей станции, доступ к интернету прекращается.</li>
                     </ul>
                 </div>
-
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
@@ -783,7 +697,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                         </div>
                     </div>
                 </div>
-                
             </div>
         </div>`;
 
@@ -809,7 +722,6 @@ class MainWorkspaceScene extends Phaser.Scene {
         let closeK = this.add.text(520, -320, '✖', { font: '36px Arial', fill: '#ff0000' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
         closeK.on('pointerdown', () => this.closeOverlay(this.overlayKanban));
         
-        // ИСПРАВЛЕНИЕ: Убрали текст "Задача 1" и "Задача 2" с карточек
         let kanbanHTML = `
         <div class="kanban-board">
             <div class="kanban-column" data-col="Очередь"><div class="kanban-header">Очередь <span class="task-count">0</span></div>
@@ -841,7 +753,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.updateKanbanBoard();
                     this.guruStatus.setText('Магистр 🟢').setFill('#00ff00');
                     this.antiGuruStatus.setText('Жорик 🟢').setFill('#00ff00');
-                   
                 }
             }
         });
@@ -893,7 +804,8 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.add.text(-480, -270, 'КОНТАКТЫ', { font: '14px Arial', fill: '#6ab2f2', fontStyle: 'bold' }).setOrigin(0, 0.5);
         this.add.rectangle(-350, -240, 300, 1, 0x242f3d);
         
-        const contacts = this.createContactList();
+        this.createContactList(); // Создаст HTML Список контактов поверх левой панели
+        
         this.chatHeader = this.add.text(-170, -270, 'Выберите чат', { font: '20px Arial', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
         
         let chatHTML = `<div id="chat-body" style="width: 630px; height: 430px; overflow-y: auto; color: #e4e6eb; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; padding: 10px 20px; box-sizing: border-box; text-align: left; white-space: pre-wrap;"></div>`;
@@ -909,53 +821,69 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.overlayPhone.add([
             bgPhone, appBg, leftPanel, chatHeaderBg, closePhone, 
-            contacts.guru.bg, contacts.guru.avatarBg, contacts.guru.avatarImg, contacts.guru.statusText, contacts.guru.separator,
-            contacts.antiGuru.bg, contacts.antiGuru.avatarBg, contacts.antiGuru.avatarImg, contacts.antiGuru.statusText, contacts.antiGuru.separator,
-            contacts.acc.bg, contacts.acc.avatarBg, contacts.acc.avatarImg, contacts.acc.statusText, contacts.acc.separator,
-            contacts.dir.bg, contacts.dir.avatarBg, contacts.dir.avatarImg, contacts.dir.statusText, contacts.dir.separator,
             this.chatHeader, this.chatHintBtn, this.chatNextBtn
         ]);
     }
 
-   createContactList() {
-        const createContact = (y, name, color, avatarColor, textureKey) => {
-            let bg = this.add.rectangle(-350, y, 300, 75, 0x17212b).setInteractive({ useHandCursor: true });
-            let avatarBg = this.add.circle(-440, y, 30, avatarColor); // Фон-обводка
-            let avatarImg = this.add.image(-440, y, textureKey);
-            
-            // ИСПРАВЛЕНИЕ: Идеально ровный квадрат по центру без искажений координат
-            let sW = avatarImg.width;
-            let sH = avatarImg.height;
-            if (sW > 0 && sH > 0) {
-                let cropSize = Math.min(sW, sH);
-                let cropX = (sW - cropSize) / 2;
-                let cropY = (sH - cropSize) / 2;
-                avatarImg.setCrop(cropX, cropY, cropSize, cropSize);
-                avatarImg.setScale(56 / cropSize); // Размер картинки 56px
-            }
+    // === 4. ЧИСТЫЙ HTML ДЛЯ СПИСКА КОНТАКТОВ ВМЕСТО CANVAS ===
+    createContactList() {
+        let html = `
+        <style>
+            .contact-list-container { width: 300px; padding-top: 10px; font-family: 'Segoe UI', Arial, sans-serif; user-select: none; }
+            .contact-item { display: flex; align-items: center; padding: 10px 20px; cursor: pointer; border-bottom: 1px solid #0e1621; transition: background 0.15s; height: 75px; box-sizing: border-box; }
+            .contact-item:hover { background: #202e3d; }
+            .contact-ava { width: 54px; height: 54px; border-radius: 50%; background-size: cover; background-position: center; margin-right: 15px; border: 2px solid; flex-shrink: 0; }
+            .contact-name { font-size: 18px; font-weight: bold; }
+        </style>
+        <div class="contact-list-container">
+            <div class="contact-item" id="btn-magistr">
+                <div class="contact-ava" style="border-color: #4fc3f7; background-image: url('assets/images/magistr.png');"></div>
+                <div class="contact-name" id="status-magistr" style="color: #888888;">Магистр ⚪</div>
+            </div>
+            <div class="contact-item" id="btn-jora">
+                <div class="contact-ava" style="border-color: #ff8a65; background-image: url('assets/images/jora.png');"></div>
+                <div class="contact-name" id="status-jora" style="color: #888888;">Жорик ⚪</div>
+            </div>
+            <div class="contact-item" id="btn-acc">
+                <div class="contact-ava" style="border-color: #e57373; background-image: url('assets/images/buhgalter.png');"></div>
+                <div class="contact-name" id="status-acc" style="color: #00ff00;">Гл. Бухгалтер 🟢</div>
+            </div>
+            <div class="contact-item" id="btn-dir">
+                <div class="contact-ava" style="border-color: #ba68c8; background-image: url('assets/images/director.png');"></div>
+                <div class="contact-name" id="status-dir" style="color: #888888;">Директор ⚪</div>
+            </div>
+        </div>
+        `;
+        
+        // Размещаем HTML ровно поверх левой панели телефона.
+        // Разделитель под шапкой "КОНТАКТЫ" находится на y=120, блок из 4 карточек
+        // высотой 75px каждая (итого 300px) должен начинаться сразу под ним,
+        // поэтому центр блока = 120 + 300/2 = 270.
+        this.contactsDOM = this.add.dom(290, 270).createFromHTML(html).setVisible(false);
+        
+        // Вешаем слушатель кликов браузера
+        this.contactsDOM.addListener('click');
+        this.contactsDOM.on('click', (event) => {
+            let item = event.target.closest('.contact-item');
+            if (!item) return;
+            if (item.id === 'btn-magistr') this.openChat('Магистр');
+            if (item.id === 'btn-jora') this.openChat('Жорик');
+            if (item.id === 'btn-acc') this.openChat('Гл. Бухгалтер');
+            if (item.id === 'btn-dir') this.openChat('Директор');
+        });
 
-            let statusText = this.add.text(-395, y, name, { font: '18px Arial', fill: color, fontStyle: 'bold' }).setOrigin(0, 0.5);
-            let separator = this.add.rectangle(-350, y + 37, 270, 1, 0x0e1621);
-            return { bg, avatarBg, avatarImg, statusText, separator };
+        // УМНЫЕ ОБЕРТКИ: Позволяют старой логике игры менять текст в новом HTML без переписывания кода!
+        const createStatusWrapper = (id) => {
+            return {
+                setText: function(t) { let el = document.getElementById(id); if(el) el.innerText = t; return this; },
+                setFill: function(c) { let el = document.getElementById(id); if(el) el.style.color = c; return this; }
+            };
         };
 
-        let guru = createContact(-215, 'Магистр ⚪', '#888888', 0x4fc3f7, 'ava_magistr');
-        this.guruStatus = guru.statusText;
-        guru.bg.on('pointerdown', () => this.openChat('Магистр'));
-
-        let antiGuru = createContact(-140, 'Жорик ⚪', '#888888', 0xff8a65, 'ava_jora');
-        this.antiGuruStatus = antiGuru.statusText;
-        antiGuru.bg.on('pointerdown', () => this.openChat('Жорик'));
-
-        let acc = createContact(-65, 'Гл. Бухгалтер 🟢', '#00ff00', 0xe57373, 'ava_buhgalter');
-        this.accStatus = acc.statusText;
-        acc.bg.on('pointerdown', () => this.openChat('Гл. Бухгалтер'));
-
-        let dir = createContact(10, 'Директор ⚪', '#888888', 0xba68c8, 'ava_director');
-        this.dirStatus = dir.statusText;
-        dir.bg.on('pointerdown', () => this.openChat('Директор'));
-
-        return { guru, antiGuru, acc, dir };
+        this.guruStatus = createStatusWrapper('status-magistr');
+        this.antiGuruStatus = createStatusWrapper('status-jora');
+        this.accStatus = createStatusWrapper('status-acc');
+        this.dirStatus = createStatusWrapper('status-dir');
     }
 
     openChat(contactName) {
@@ -1065,10 +993,8 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         if (isSystem) return `<div style="text-align: center; margin: 15px 0;"><span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span></div>`;
         
-        // Исходящие сообщения (Сисадмин)
         if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 15px;"><div style="background: #2b5278; color: #fff; padding: 12px 16px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 56px; height: 56px; border-radius: 50%; background: #1e88e5; display: flex; justify-content: center; align-items: center; margin-left: 12px; flex-shrink: 0; font-size: 26px;">👨‍💻</div></div>`;
         
-        // Входящие сообщения (NPC)
         return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 15px;">
             <div style="width: 56px; height: 56px; border-radius: 50%; border: 2px solid ${avatarColor}; background-image: url('${avatarImgPath}'); background-size: cover; background-position: center; flex-shrink: 0; margin-right: 12px;"></div>
             <div style="background: #182533; color: #e4e6eb; padding: 12px 16px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div>
@@ -1140,7 +1066,6 @@ class MainWorkspaceScene extends Phaser.Scene {
 
                     this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
                     
-                    // ИСПРАВЛЕНИЕ: Добавлено сообщение "Админ: Уже смотрю."
                     this.chatData['Директор'].queue = [...DIALOGS.director.intro, 'Админ: Уже смотрю.'];
                     
                     if (this.overlayPhone.visible && this.activeContact === 'Директор') {

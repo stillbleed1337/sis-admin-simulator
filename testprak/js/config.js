@@ -17,7 +17,19 @@ const GAME_CONFIG = {
         small: '14px Arial',
     },
     TERMINAL: { width: 750, height: 450, x: 830, y: 300 },
-    SCORES: { initialScore: 30, hintGuruCost: 10, hintAntiGuruCost: 5, mistakePenalty1: 5, mistakePenalty2: 10 }
+    SCORES: { initialScore: 30, hintGuruCost: 10, hintAntiGuruCost: 5, mistakePenalty1: 5, mistakePenalty2: 10 },
+
+    // Сетевые данные для команды ping в терминале.
+    // Вынесено сюда из terminal.js, чтобы весь игровой контент (кто где, какие IP)
+    // редактировался в одном месте, без правок в логике команд.
+    NETWORK: {
+        // Публичные хосты - интернет либо доступен полностью, либо недоступен из-за антивируса/прокси
+        internetHosts: ['ya.ru', 'yandex.ru', 'google.com', 'google.ru', 'vk.com', 'mail.ru', 'youtube.com', 'github.com', 'habr.com', '8.8.8.8', '1.1.1.1'],
+        // Задание 1: коммутатор бухгалтерии выключен - эти адреса "недоступны"
+        offlineIps: ['10.138.5.103', '10.138.5.104', '10.138.5.105'],
+        // Задание 1: соседние машины в сети - "доступны", чтобы игрок понял, что проблема локальная
+        onlineIps: ['10.138.5.101', '10.138.5.102', '10.138.5.51', '10.138.5.1', '10.160.0.30']
+    }
 };
 
 // Расширяем стадии игры для второго инцидента
