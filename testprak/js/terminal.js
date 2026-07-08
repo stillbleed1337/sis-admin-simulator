@@ -94,8 +94,8 @@ class VirtualTerminal {
                 let progress = this.scene ? this.scene.sysState.progress : 0;
                 let out = 'Доступные команды:\r\n ping, clear, ls, cd, pwd, cat, touch, rm, mv, wget, unzip, ssh, systemctl, exit\r\n';
                 
-                // Подсказка про Касперского появляется ТОЛЬКО на 2 задании (прогресс от 6 до 9)
-                if (progress >= 6 && progress <= 9) {
+                // Подсказка про Касперского появляется ТОЛЬКО на 2 задании
+                if (progress >= GAME_STAGE.DIR_TASK_RECEIVED && progress <= GAME_STAGE.DIR_FINISHED) {
                     out += '\r\nПроверка листов блокировки интернета на сервере Касперского:\r\n wget http://ksc.domain.loc/list.zip\r\n';
                 }
                 
@@ -280,11 +280,7 @@ class VirtualTerminal {
 
         if (!targetIp) return this.term.write('ping: missing host operand\r\n');
 
-        const internetHosts = [
-            'ya.ru', 'yandex.ru', 'google.com', 'google.ru', 'vk.com', 
-            'mail.ru', 'youtube.com', 'github.com', 'habr.com', 
-            '8.8.8.8', '1.1.1.1'
-        ];
+        const internetHosts = GAME_CONFIG.NETWORK.internetHosts;
 
         // 1. Проверка Пинга на внешний адрес (Интернет)
         if (internetHosts.includes(targetIp)) {
@@ -319,8 +315,8 @@ class VirtualTerminal {
         // или IP Директора, если мы сидим через SSH
         let myIp = this.isSSH ? '10.138.10.101' : '10.138.10.105'; 
         
-        const offlineIps = ['10.138.5.103', '10.138.5.104', '10.138.5.105'];
-        const onlineIps = ['10.138.5.101', '10.138.5.102', '10.138.5.51', '10.138.5.1', '10.160.0.30'];
+        const offlineIps = GAME_CONFIG.NETWORK.offlineIps;
+        const onlineIps = GAME_CONFIG.NETWORK.onlineIps;
 
         if (offlineIps.includes(targetIp)) {
             let out = `PING ${targetIp} (${targetIp}) 56(84) bytes of data.\r\n`;
