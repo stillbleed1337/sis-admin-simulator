@@ -20,6 +20,8 @@ class BootScene extends Phaser.Scene {
         this.load.image('barmen', 'assets/images/barmen.png');
         this.load.image('bg_loading', 'assets/images/zagruz.png');
         this.load.image('btn_start', 'assets/images/button-start.png');
+        // === ДОБАВЛЯЕМ ЗАГРУЗКУ ЗАГОЛОВКА ===
+        this.load.image('title_img', 'assets/images/hroniki.png');
         // --- АВАТАРКИ ПЕРСОНАЖЕЙ ---
         this.load.image('ava_director', 'assets/images/director.png');
         this.load.image('ava_buhgalter', 'assets/images/buhgalter.png');
@@ -57,32 +59,57 @@ class LoadingScene extends Phaser.Scene {
         // 2. Добавляем фон экрана загрузки
         this.add.image(640, 360, 'bg_loading').setDisplaySize(1280, 720);
 
-        // 3. Добавляем кнопку
+        // === ДОБАВЛЯЕМ ЗАГОЛОВОК И СВЕЧЕНИЕ ===
+        // Создаем "ауру" свечения под заголовком
+       // === ДОБАВЛЯЕМ ЗАГОЛОВОК И ТЕНЬ ===
+       // === НАСТРОЙКИ ===
+        let titleScale = 0.3; 
+
+        // 1. ПУЛЬСИРУЮЩАЯ ТЕНЬ (самый нижний слой)
+        // Она будет немного "дышать" за текстом
+        let titleGlow = this.add.image(640, 200, 'title_img')
+            .setTint(0x000000) 
+            .setAlpha(0.5)
+            .setScale(titleScale);
+
+        // 2. СТАТИЧНАЯ ОБВОДКА
+        // Делаем её чуть-чуть больше основного текста (например, на 0.02)
+        // И окрашиваем в черный цвет для контраста
+        let titleOutline = this.add.image(640, 200, 'title_img')
+            .setTint(0x000000) 
+            .setScale(titleScale + 0.002); 
+
+        // 3. ОСНОВНОЙ ТЕКСТ (верхний слой)
+        let title = this.add.image(640, 200, 'title_img')
+            .setScale(titleScale);
+
+        // Анимация пульсации только для тени (она будет выходить из-под обводки)
+        this.tweens.add({
+            targets: titleGlow,
+            scale: titleScale + 0.008, // Пульсирует чуть сильнее, чем статичная обводка
+            alpha: 0.2,               // Растворяется до полупрозрачности
+            duration: 2500,    
+            yoyo: true,        
+            repeat: -1,        
+            ease: 'Sine.easeInOut' 
+        });
+        // =====================================
+
+        // 3. Добавляем кнопку (чуть ниже заголовка)
         let startBtn = this.add.image(640, 550, 'btn_start')
             .setInteractive({ useHandCursor: true })
             .setScale(0.13); 
 
         // Плавная анимация при наведении (Tween)
         startBtn.on('pointerover', () => {
-            this.tweens.add({ 
-                targets: startBtn, 
-                scale: 0.14,      
-                duration: 150,    
-                ease: 'Power2'    
-            });
+            this.tweens.add({ targets: startBtn, scale: 0.14, duration: 150, ease: 'Power2' });
         });
 
         // Плавное возвращение обратно, когда убираем мышь
         startBtn.on('pointerout', () => {
-            this.tweens.add({ 
-                targets: startBtn, 
-                scale: 0.13,       
-                duration: 150, 
-                ease: 'Power2' 
-            });
+            this.tweens.add({ targets: startBtn, scale: 0.13, duration: 150, ease: 'Power2' });
         });
 
-        // === ЭТОТ БЛОК ПРОПАЛ, ДОБАВЛЯЕМ ЕГО СЮДА ===
         // 4. Логика перехода при клике
         startBtn.on('pointerdown', () => {
             this.sound.play('openClick'); // Звук клика
@@ -221,7 +248,7 @@ class IntroScene extends Phaser.Scene {
             this.time.delayedCall(2000, () => {
                 this.showDialog('Бармен', [
                     'Привет! Добро пожаловать в наше IT-кафе при дата-центре.',
-                    'Слушай, тут твои друзья-сисадмины заказали фирменный сет мороженого из 8 шариков.',
+                    'Слушай, тут твои друзья-сисадмины заказали фирменный сет из 8 видов мороженого.',
                     'Просили расставить цвета строго в правильной последовательности, иначе, говорят, "линк не поднимется".',
                     'Поможешь собрать заказ? Кликай по стаканчикам в правильном порядке!'
                 ]);
