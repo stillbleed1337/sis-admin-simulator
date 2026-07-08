@@ -7,6 +7,7 @@ class BootScene extends Phaser.Scene {
     
     preload() {
         // --- КАРТИНКИ ---
+        this.load.image('fon', 'assets/images/fon.png');
         this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
@@ -488,8 +489,10 @@ class MainWorkspaceScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.fadeIn(1000, 0, 0, 0);
-        this.cameras.main.setBackgroundColor(GAME_CONFIG.COLORS.bg);
-
+        // === ВМЕЩАЕМ ВЕСЬ ФОН В ЭКРАН ===
+        let mainBg = this.add.image(640, 360, 'fon').setDepth(-1);
+        mainBg.setDisplaySize(1280, 720);
+        // ======================================
         this.sysState = { 
             progress: GAME_STAGE.INTRO, 
             handbookRead: false,
@@ -508,27 +511,35 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.totalScore, { font: 'bold 24px Arial', fill: '#ffff00' }).setOrigin(0, 0).setDepth(20);
 
-        this.add.rectangle(640, 600, 1280, 240, 0x8b4513); 
 
-        this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
+
+       // === КАНБАН-ДОСКА (В КОНТЕЙНЕРЕ) ===
+        // Чтобы опустить доску еще ниже, увеличь цифру 80. Чтобы поднять — уменьши.
+        const boardContainer = this.add.container(25, 117);
+        boardContainer.setScale(0.85); 
+
+        let shadowK = this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
         const board = this.add.rectangle(230, 220, 380, 250, 0x3a3f44).setInteractive({ useHandCursor: true });
-        this.add.rectangle(230, 220, 360, 230, 0xffffff); 
-        this.add.rectangle(140, 220, 2, 230, 0xe0e6ed); 
-        this.add.rectangle(230, 220, 2, 230, 0xe0e6ed); 
-        this.add.rectangle(320, 220, 2, 230, 0xe0e6ed); 
+        let bgWhiteK = this.add.rectangle(230, 220, 360, 230, 0xffffff); 
+        let line1K = this.add.rectangle(140, 220, 2, 230, 0xe0e6ed); 
+        let line2K = this.add.rectangle(230, 220, 2, 230, 0xe0e6ed); 
+        let line3K = this.add.rectangle(320, 220, 2, 230, 0xe0e6ed); 
 
-        this.add.rectangle(95, 120, 76, 14, 0xf0f2f5);
-        this.add.rectangle(185, 120, 76, 14, 0xf0f2f5);
-        this.add.rectangle(275, 120, 76, 14, 0xf0f2f5);
-        this.add.rectangle(365, 120, 76, 14, 0xf0f2f5);
+        let header1K = this.add.rectangle(95, 120, 76, 14, 0xf0f2f5);
+        let header2K = this.add.rectangle(185, 120, 76, 14, 0xf0f2f5);
+        let header3K = this.add.rectangle(275, 120, 76, 14, 0xf0f2f5);
+        let header4K = this.add.rectangle(365, 120, 76, 14, 0xf0f2f5);
 
-        this.add.rectangle(95, 150, 70, 28, 0xffeb3b).setAngle(-2); 
-        this.add.rectangle(95, 185, 70, 28, 0xffeb3b).setAngle(1);  
-        this.add.rectangle(185, 155, 70, 28, 0x4fc3f7).setAngle(3); 
-        this.add.rectangle(275, 145, 70, 28, 0xffb74d).setAngle(-1); 
-        this.add.rectangle(365, 150, 70, 28, 0x81c784).setAngle(2);  
-        this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
-        this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
+        let note1K = this.add.rectangle(95, 150, 70, 28, 0xffeb3b).setAngle(-2); 
+        let note2K = this.add.rectangle(95, 185, 70, 28, 0xffeb3b).setAngle(1);  
+        let note3K = this.add.rectangle(185, 155, 70, 28, 0x4fc3f7).setAngle(3); 
+        let note4K = this.add.rectangle(275, 145, 70, 28, 0xffb74d).setAngle(-1); 
+        let note5K = this.add.rectangle(365, 150, 70, 28, 0x81c784).setAngle(2);  
+        let note6K = this.add.rectangle(365, 185, 70, 28, 0x81c784).setAngle(-2); 
+        let note7K = this.add.rectangle(365, 220, 70, 28, 0x81c784).setAngle(1);
+
+        boardContainer.add([shadowK, board, bgWhiteK, line1K, line2K, line3K, header1K, header2K, header3K, header4K, note1K, note2K, note3K, note4K, note5K, note6K, note7K]);
+        // ===================================
 
         const book = this.add.container(150, 610).setDepth(2);
         const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
