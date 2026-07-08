@@ -8,6 +8,8 @@ class BootScene extends Phaser.Scene {
     preload() {
         // --- КАРТИНКИ ---
         this.load.image('fon', 'assets/images/fon.png');
+        this.load.image('spravochnik', 'assets/images/spravochnik.png');
+        this.load.image('shemaseti', 'assets/images/shemaseti.png');
         this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
@@ -514,25 +516,52 @@ class MainWorkspaceScene extends Phaser.Scene {
         boardContainer.add([shadowK, board, bgWhiteK, line1K, line2K, line3K, header1K, header2K, header3K, header4K, note1K, note2K, note3K, note4K, note5K, note6K, note7K]);
         // ===================================
 
-        const book = this.add.container(150, 610).setDepth(2);
-        const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
-        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); 
-        const bookText = this.add.text(10, 0, 'СПРАВОЧНИК', { font: 'bold 16px Courier', fill: '#cccccc' }).setOrigin(0.5);
-        book.add([bookBg, bookSpine, bookText]);
-        book.setInteractive(new Phaser.Geom.Rectangle(-70, -50, 140, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
-
-        const networkMap = this.add.container(320, 610).setDepth(2);
-        const mapBg = this.add.rectangle(0, 0, 160, 100, 0x0a1910).setStrokeStyle(2, 0x00aa00);
-        const mapTextHeader = this.add.text(0, -15, 'СХЕМА СЕТИ', { font: 'bold 18px Courier', fill: '#00ff00' }).setOrigin(0.5);
-        const mapTextIP = this.add.text(0, 20, '192.168.8.x', { font: '14px Courier', fill: '#008800' }).setOrigin(0.5);
-        networkMap.add([mapBg, mapTextHeader, mapTextIP]);
-        networkMap.setInteractive(new Phaser.Geom.Rectangle(-80, -50, 160, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
-
-        book.on('pointerover', () => { bookBg.setStrokeStyle(2, 0xffa500); bookText.setColor('#ffa500'); });
-        book.on('pointerout', () => { bookBg.setStrokeStyle(2, 0x555555); bookText.setColor('#cccccc'); });
+        // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
+      // Сдвинули справочник ещё правее (X = 430)
+        const book = this.add.container(430, 610).setDepth(2);
         
-        networkMap.on('pointerover', () => { mapBg.setStrokeStyle(2, 0xffffff); mapTextHeader.setColor('#ffffff'); });
-        networkMap.on('pointerout', () => { mapBg.setStrokeStyle(2, 0x00aa00); mapTextHeader.setColor('#00ff00'); });
+        // Создаем картинку (заменяет старые прямоугольники)
+        const bookImg = this.add.image(0, 0, 'spravochnik');
+        
+        // Подгоняем масштаб (0.5 = 50% размера). Меняй эту цифру, если книга будет слишком большой или маленькой
+        let baseScale = 0.5; 
+        bookImg.setScale(baseScale);
+        
+        book.add(bookImg);
+        
+        // Автоматически вычисляем зону для клика на основе финального размера картинки
+        const hitW = bookImg.displayWidth;
+        const hitH = bookImg.displayHeight;
+        book.setInteractive(new Phaser.Geom.Rectangle(-hitW/2, -hitH/2, hitW, hitH), Phaser.Geom.Rectangle.Contains);
+        book.input.cursor = 'pointer';
+        // ===================================
+        // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
+        // Сдвинули только схему сети еще правее (X = 720), теперь она ближе к терминалу
+        const networkMap = this.add.container(720, 610).setDepth(2);
+        
+        const mapImg = this.add.image(0, 0, 'shemaseti');
+        
+        // Подгоняем масштаб (0.5 = 50%). Меняй эту цифру, если схема слишком большая/маленькая
+        let mapBaseScale = 0.4; 
+        mapImg.setScale(mapBaseScale);
+        
+        networkMap.add(mapImg);
+        
+        // Автоматически вычисляем зону для клика
+        const mapHitW = mapImg.displayWidth;
+        const mapHitH = mapImg.displayHeight;
+        networkMap.setInteractive(new Phaser.Geom.Rectangle(-mapHitW/2, -mapHitH/2, mapHitW, mapHitH), Phaser.Geom.Rectangle.Contains);
+        networkMap.input.cursor = 'pointer';
+        // ===================================
+
+        // При наведении мыши книга чуть увеличивается (+5%)
+        book.on('pointerover', () => { bookImg.setScale(baseScale + 0.05); });
+        // При отведении возвращается к базовому размеру
+        book.on('pointerout', () => { bookImg.setScale(baseScale); });
+        // При наведении мыши схема чуть увеличивается (+5%)
+        networkMap.on('pointerover', () => { mapImg.setScale(mapBaseScale + 0.05); });
+        // При отведении возвращается к базовому размеру
+        networkMap.on('pointerout', () => { mapImg.setScale(mapBaseScale); });
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
