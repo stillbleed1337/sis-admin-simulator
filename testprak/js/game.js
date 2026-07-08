@@ -18,6 +18,8 @@ class BootScene extends Phaser.Scene {
         this.load.image('green2', 'assets/images/green2.png');
         this.load.image('stol', 'assets/images/cafetery.png');
         this.load.image('barmen', 'assets/images/barmen.png');
+        this.load.image('bg_loading', 'assets/images/zagruz.png');
+        this.load.image('btn_start', 'assets/images/button-start.png');
         // --- АВАТАРКИ ПЕРСОНАЖЕЙ ---
         this.load.image('ava_director', 'assets/images/director.png');
         this.load.image('ava_buhgalter', 'assets/images/buhgalter.png');
@@ -39,8 +41,64 @@ class BootScene extends Phaser.Scene {
     }
     
     create() { 
-        this.scene.start('IntroScene'); 
+        // Запускаем нашу новую сцену вместо IntroScene
+        this.scene.start('LoadingScene'); 
         this.scene.launch('UIScene'); 
+    }
+}
+
+class LoadingScene extends Phaser.Scene {
+    constructor() { super('LoadingScene'); }
+
+    create() {
+        // 1. Команда fadeIn делает плавное появление из черного экрана. 
+        this.cameras.main.fadeIn(1000, 0, 0, 0);
+
+        // 2. Добавляем фон экрана загрузки
+        this.add.image(640, 360, 'bg_loading').setDisplaySize(1280, 720);
+
+        // 3. Добавляем кнопку
+        let startBtn = this.add.image(640, 550, 'btn_start')
+            .setInteractive({ useHandCursor: true })
+            .setScale(0.13); 
+
+        // Плавная анимация при наведении (Tween)
+        startBtn.on('pointerover', () => {
+            this.tweens.add({ 
+                targets: startBtn, 
+                scale: 0.14,      
+                duration: 150,    
+                ease: 'Power2'    
+            });
+        });
+
+        // Плавное возвращение обратно, когда убираем мышь
+        startBtn.on('pointerout', () => {
+            this.tweens.add({ 
+                targets: startBtn, 
+                scale: 0.13,       
+                duration: 150, 
+                ease: 'Power2' 
+            });
+        });
+
+        // === ЭТОТ БЛОК ПРОПАЛ, ДОБАВЛЯЕМ ЕГО СЮДА ===
+        // 4. Логика перехода при клике
+        startBtn.on('pointerdown', () => {
+            this.sound.play('openClick'); // Звук клика
+
+            // Отключаем кнопку, чтобы игрок не прокликал её дважды во время анимации
+            startBtn.disableInteractive(); 
+
+            // Запускаем плавное затухание экрана (в черный)
+            this.cameras.main.fadeOut(1000, 0, 0, 0);
+
+            // Слушатель события: ждем, когда анимация затухания полностью завершится
+            this.cameras.main.once('camerafadeoutcomplete', () => {
+                // Убиваем эту сцену и стартуем сцену с мороженым
+                this.scene.start('IntroScene');
+            });
+        });
     }
 }
 
@@ -86,8 +144,9 @@ class IntroScene extends Phaser.Scene {
     constructor() { super('IntroScene'); }
     
     create() {
-       this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
+       this.cameras.main.fadeIn(1000, 0, 0, 0);
 
+       this.add.image(640, 360, 'stol').setDisplaySize(1280, 720);
         // === ДОБАВЛЯЕМ БАРМЕНА ЗА СТОЙКУ ===
         let maskShape = this.make.graphics();
         maskShape.fillRect(0, 0, 1280, 518); 
@@ -157,13 +216,16 @@ class IntroScene extends Phaser.Scene {
         this.createDialogUI();
         this.initTest();
 
-        this.time.delayedCall(500, () => {
-            this.showDialog('Бармен', [
-                'Привет! Добро пожаловать в наше IT-кафе при дата-центре.',
-                'Слушай, тут твои друзья-сисадмины заказали фирменный сет мороженого из 8 шариков.',
-                'Просили расставить цвета строго в правильной последовательности, иначе, говорят, "линк не поднимется".',
-                'Поможешь собрать заказ? Кликай по стаканчикам в правильном порядке!'
-            ]);
+        this.cameras.main.once('camerafadeincomplete', () => {
+            // Как только сцена появилась, запускаем таймер на 2 секунды (2000 мс)
+            this.time.delayedCall(2000, () => {
+                this.showDialog('Бармен', [
+                    'Привет! Добро пожаловать в наше IT-кафе при дата-центре.',
+                    'Слушай, тут твои друзья-сисадмины заказали фирменный сет мороженого из 8 шариков.',
+                    'Просили расставить цвета строго в правильной последовательности, иначе, говорят, "линк не поднимется".',
+                    'Поможешь собрать заказ? Кликай по стаканчикам в правильном порядке!'
+                ]);
+            });
         });
     }
 
@@ -798,6 +860,10 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.kanbanDOM.on('click', (event) => {
             if (event.target.id === 'task-1' || event.target.closest('#task-1')) {
                 if (this.sysState.progress === GAME_STAGE.TASK_RECEIVED) {
+                    
+                    // === ДОБАВЛЯЕМ ЗВУК ТУТ ===
+                    this.sound.play('popMsg'); 
+                    
                     this.sysState.progress = GAME_STAGE.WORKING; 
                     this.updateKanbanBoard();
                     this.guruStatus.setText('Магистр 🟢').setFill('#00ff00');
@@ -807,6 +873,10 @@ class MainWorkspaceScene extends Phaser.Scene {
             }
             if (event.target.id === 'task-2' || event.target.closest('#task-2')) {
                 if (this.sysState.progress === GAME_STAGE.DIR_TASK_RECEIVED) {
+                    
+                    // === И ТУТ ТОЖЕ ===
+                    this.sound.play('popMsg'); 
+                    
                     this.sysState.progress = GAME_STAGE.DIR_WORKING; 
                     this.updateKanbanBoard();
                     this.guruStatus.setText('Магистр 🟢').setFill('#00ff00');
@@ -1167,6 +1237,6 @@ const config = {
     parent: 'game-container', 
     dom: { createContainer: true },
     scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH }, 
-    scene: [BootScene, IntroScene, MainWorkspaceScene, UIScene] 
+    scene: [BootScene, LoadingScene, IntroScene, MainWorkspaceScene, UIScene] 
 };
 const game = new Phaser.Game(config);
