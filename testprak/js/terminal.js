@@ -280,40 +280,72 @@ class VirtualTerminal {
 
         if (!targetIp) return this.term.write('ping: missing host operand\r\n');
 
+        // Переменная объявляется ОДИН раз здесь
+        let myIp = this.isSSH ? '10.138.10.101' : '10.138.10.105'; 
+
         const internetHosts = GAME_CONFIG.NETWORK.internetHosts;
 
         // 1. Проверка Пинга на внешний адрес (Интернет)
         if (internetHosts.includes(targetIp)) {
+            // Если у нас 3 инцидент и он еще не решен - интернет лежит у всех
+            if (progress >= GAME_STAGE.INC3_TASK_RECEIVED && progress < GAME_STAGE.INC3_FINISHED) {
+                let out = `PING ${targetIp} 56(84) bytes of data.\r\n`;
+                out += `From ${myIp} icmp_seq=1 Destination Net Unreachable\r\n`;
+                out += `From ${myIp} icmp_seq=2 Destination Net Unreachable\r\n`;
+                out += `^C\r\n--- ${targetIp} ping statistics ---\r\n`;
+                out += `2 packets transmitted, 0 received, +2 errors, 100% packet loss, time 1002ms\r\n`;
+                return this.term.write(out);
+            }
+            
+            // Старая логика 2 инцидента (Касперский)
             if (this.isSSH && !this.keslStarted) {
-                // Имитация: с компа Директора без антивируса в инет не пускает
                 let out = `PING ${targetIp} 56(84) bytes of data.\r\n`;
                 out += `From 10.138.10.101 icmp_seq=1 Destination Net Unreachable\r\n`;
                 out += `From 10.138.10.101 icmp_seq=2 Destination Net Unreachable\r\n`;
-                out += `From 10.138.10.101 icmp_seq=3 Destination Net Unreachable\r\n`;
                 out += `^C\r\n--- ${targetIp} ping statistics ---\r\n`;
-                out += `3 packets transmitted, 0 received, +3 errors, 100% packet loss, time 2005ms\r\n`;
+                out += `2 packets transmitted, 0 received, +2 errors, 100% packet loss, time 1002ms\r\n`;
                 this.term.write(out);
             } else {
-                // Инет работает (у нас или у Директора с запущенным Касперским)
                 let out = `PING ${targetIp} 56(84) bytes of data.\r\n`;
                 out += `64 bytes from ${targetIp}: icmp_seq=1 ttl=53 time=15.9 ms\r\n`;
                 out += `64 bytes from ${targetIp}: icmp_seq=2 ttl=53 time=16.2 ms\r\n`;
-                out += `64 bytes from ${targetIp}: icmp_seq=3 ttl=53 time=15.7 ms\r\n`;
                 out += `^C\r\n--- ${targetIp} ping statistics ---\r\n`;
-                out += `3 packets transmitted, 3 received, 0% packet loss, time 2002ms\r\n`;
-                out += `rtt min/avg/max/mdev = 15.695/15.913/16.184/0.202 ms\r\n`;
+                out += `2 packets transmitted, 2 received, 0% packet loss, time 1002ms\r\n`;
                 this.term.write(out);
-                
                 if (this.scene && !this.isSSH) this.scene.sysState.pingYaRuDone = true;
             }
             return;
         }
 
-        if (progress < 2) return this.term.write('Ошибка: У вас нет активных задач в сети.\r\n');
+        // 2. СПЕЦ. ПРОВЕРКА ДЛЯ ИНЦИДЕНТА 3 (ОТВАЛ МАРШРУТИЗАТОРА)
+        if (progress >= GAME_STAGE.INC3_TASK_RECEIVED && progress < GAME_STAGE.INC3_FINISHED) {
+            const inc3OfflineIps = GAME_CONFIG.NETWORK.inc3_offlineIps;
+            const inc3OnlineIps = GAME_CONFIG.NETWORK.inc3_onlineIps;
 
-        // ИСПРАВЛЕНИЕ: Берем правильный IP из схемы сети (10.138.10.105) 
-        // или IP Директора, если мы сидим через SSH
-        let myIp = this.isSSH ? '10.138.10.101' : '10.138.10.105'; 
+            if (inc3OfflineIps.includes(targetIp)) {
+                let out = `PING ${targetIp} (${targetIp}) 56(84) bytes of data.\r\n`;
+                out += `From ${myIp} icmp_seq=1 Destination Host Unreachable\r\n`;
+                out += `From ${myIp} icmp_seq=2 Destination Host Unreachable\r\n`;
+                out += `^C\r\n--- ${targetIp} ping statistics ---\r\n`;
+                out += `2 packets transmitted, 0 received, +2 errors, 100% packet loss, time 1005ms\r\n`;
+
+                if (this.scene && targetIp === '192.168.1.1') this.scene.sysState.inc3PingFailedDone = true;
+
+                return this.term.write(out);
+            }
+
+            if (inc3OnlineIps.includes(targetIp)) {
+                let out = `PING ${targetIp} (${targetIp}) 56(84) bytes of data.\r\n`;
+                out += `64 bytes from ${targetIp}: icmp_seq=1 ttl=64 time=0.412 ms\r\n`;
+                out += `64 bytes from ${targetIp}: icmp_seq=2 ttl=64 time=0.389 ms\r\n`;
+                out += `^C\r\n--- ${targetIp} ping statistics ---\r\n`;
+                out += `2 packets transmitted, 2 received, 0% packet loss, time 1002ms\r\n`;
+                return this.term.write(out);
+            }
+        }
+
+        // 3. ПРОВЕРКА ДЛЯ ЛОКАЛЬНЫХ IP
+        if (progress < 2) return this.term.write('Ошибка: У вас нет активных задач в сети.\r\n');
         
         const offlineIps = GAME_CONFIG.NETWORK.offlineIps;
         const onlineIps = GAME_CONFIG.NETWORK.onlineIps;
