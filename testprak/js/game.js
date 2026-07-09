@@ -544,17 +544,21 @@ class MainWorkspaceScene extends Phaser.Scene {
         // ===================================
 
         // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
-      // Сдвинули справочник ещё правее (X = 430)
-        const book = this.add.container(430, 610).setDepth(2);
+        const book = this.add.container(300, 610).setDepth(2);
         
-        // Создаем картинку (заменяет старые прямоугольники)
+        // --- СОЗДАЕМ ТЕНЬ ---
+        const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
+        bookShadow.setScale(0.5); // Тот же масштаб
+        bookShadow.setTint(0x000000); 
+        bookShadow.setAlpha(0.35); 
+        
+        // --- САМА КНИГА ---
         const bookImg = this.add.image(0, 0, 'spravochnik');
-        
-        // Подгоняем масштаб (0.5 = 50% размера). Меняй эту цифру, если книга будет слишком большой или маленькой
         let baseScale = 0.5; 
         bookImg.setScale(baseScale);
         
-        book.add(bookImg);
+        // Добавляем тень ПЕРВОЙ в контейнер, чтобы она была под картинкой
+        book.add([bookShadow, bookImg]);
         
         // Автоматически вычисляем зону для клика на основе финального размера картинки
         const hitW = bookImg.displayWidth;
@@ -563,16 +567,21 @@ class MainWorkspaceScene extends Phaser.Scene {
         book.input.cursor = 'pointer';
         // ===================================
         // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
-        // Сдвинули только схему сети еще правее (X = 720), теперь она ближе к терминалу
-        const networkMap = this.add.container(720, 610).setDepth(2);
+        const networkMap = this.add.container(580, 610).setDepth(2);
         
+        // --- СОЗДАЕМ ТЕНЬ ---
+        const mapShadow = this.add.image(5, 7, 'shemaseti'); // Сдвиг (5, 7)
+        mapShadow.setScale(0.4);
+        mapShadow.setTint(0x000000);
+        mapShadow.setAlpha(0.35);
+        
+        // --- САМА СХЕМА ---
         const mapImg = this.add.image(0, 0, 'shemaseti');
-        
-        // Подгоняем масштаб (0.5 = 50%). Меняй эту цифру, если схема слишком большая/маленькая
         let mapBaseScale = 0.4; 
         mapImg.setScale(mapBaseScale);
         
-        networkMap.add(mapImg);
+        // Добавляем тень ПЕРВОЙ в контейнер
+        networkMap.add([mapShadow, mapImg]);
         
         // Автоматически вычисляем зону для клика
         const mapHitW = mapImg.displayWidth;
