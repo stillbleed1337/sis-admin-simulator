@@ -849,7 +849,7 @@ class MainWorkspaceScene extends Phaser.Scene {
 
        // === КАНБАН-ДОСКА (В КОНТЕЙНЕРЕ) ===
         // Чтобы опустить доску еще ниже, увеличь цифру 80. Чтобы поднять — уменьши.
-        const boardContainer = this.add.container(25, 117);
+        const boardContainer = this.add.container(25, 35);
         boardContainer.setScale(0.85); 
 
         let shadowK = this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
@@ -876,17 +876,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         // ===================================
 
         // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
-        const book = this.add.container(300, 610).setDepth(2);
+        const book = this.add.container(150, 610).setDepth(2);
         
         // --- СОЗДАЕМ ТЕНЬ ---
         const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
-        bookShadow.setScale(0.5); // Тот же масштаб
+        bookShadow.setScale(0.45); // Тот же масштаб
         bookShadow.setTint(0x000000); 
-        bookShadow.setAlpha(0.35); 
+        bookShadow.setAlpha(0.30); 
         
         // --- САМА КНИГА ---
         const bookImg = this.add.image(0, 0, 'spravochnik');
-        let baseScale = 0.5; 
+        let baseScale = 0.45; 
         bookImg.setScale(baseScale);
         
         // Добавляем тень ПЕРВОЙ в контейнер, чтобы она была под картинкой
@@ -899,17 +899,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         book.input.cursor = 'pointer';
         // ===================================
         // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
-        const networkMap = this.add.container(580, 610).setDepth(2);
+        const networkMap = this.add.container(380, 610).setDepth(2);
         
         // --- СОЗДАЕМ ТЕНЬ ---
         const mapShadow = this.add.image(5, 7, 'shemaseti'); // Сдвиг (5, 7)
-        mapShadow.setScale(0.4);
+        mapShadow.setScale(0.25);
         mapShadow.setTint(0x000000);
-        mapShadow.setAlpha(0.35);
+        mapShadow.setAlpha(0.20);
         
         // --- САМА СХЕМА ---
         const mapImg = this.add.image(0, 0, 'shemaseti');
-        let mapBaseScale = 0.4; 
+        let mapBaseScale = 0.25; 
         mapImg.setScale(mapBaseScale);
         
         // Добавляем тень ПЕРВОЙ в контейнер
@@ -1257,6 +1257,7 @@ class MainWorkspaceScene extends Phaser.Scene {
                     <ul class="book-list">
                         <li><strong>Proxy:</strong> служит для раздачи интернета пользователям.</li>
                         <li style="color: #ff8a65;"><strong>Внимание:</strong> Если не установлен или не запущен антивирус Касперского на рабочей станции, доступ к интернету прекращается.</li>
+                        <li><strong>SSH-доступ:</strong> Для входа по ssh на компьютеры пользователей используется учётная запись <code>admin</code>.</li>
                     </ul>
                 </div>
                 <div class="book-section" style="border-left-color: #ff8a65;">
