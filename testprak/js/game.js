@@ -284,7 +284,7 @@ class IntroScene extends Phaser.Scene {
         this.htmlDialogDOM = this.add.dom(640, 360).createFromHTML(dialogHTML).setDepth(101).setVisible(false);
     }
 
-    // === 2. ВЫЗОВ HTML ДИАЛОГА ===
+   // === 2. ВЫЗОВ HTML ДИАЛОГА (С ПОДДЕРЖКОЙ КАРТИНОК) ===
     showDialog(sender, messages, isGameOver = false) {
         this.isGameOverState = isGameOver; 
         this.activeMessages = messages; 
@@ -298,10 +298,10 @@ class IntroScene extends Phaser.Scene {
 
         senderEl.innerText = sender;
         
-        // === ВАЖНО: Сбрасываем позицию для всех остальных! ===
         avatarImgEl.style.backgroundPosition = "center";
         avatarImgEl.style.backgroundSize = "cover";
 
+        // ... (твоя логика смены аватарок остается без изменений) ...
         if (sender === 'Жорик') {
             senderEl.style.color = '#ff8a65';
             avatarEl.style.borderColor = '#ff8a65';
@@ -322,22 +322,24 @@ class IntroScene extends Phaser.Scene {
             senderEl.style.color = '#ffb74d';
             avatarEl.style.borderColor = '#ffb74d';
             avatarImgEl.style.backgroundImage = "url('assets/images/barmen.png')";
-            
-            // === ЖЕСТКАЯ ПРИВЯЗКА В ПИКСЕЛЯХ ===
-            // Сдвигаем фон вниз ровно на 20 пикселей, чтобы вытащить макушку из-под обрезки
             avatarImgEl.style.backgroundPosition = "center 20px"; 
-            
-            // Настраиваем зум (если лицо мелкое — ставь 180%, если крупное — 120%)
             avatarImgEl.style.backgroundSize = "150%"; 
-            
         } else {
             senderEl.style.color = '#ffffff';
             avatarEl.style.borderColor = '#555555';
             avatarImgEl.style.backgroundImage = "none";
         }
 
-        // Подставляем текст и сбрасываем стили
-        textEl.innerText = this.activeMessages[0];
+        // === ИЗМЕНЕНИЕ ТУТ: ЛОГИКА ОТОБРАЖЕНИЯ КАРТИНКИ ===
+        let msg = this.activeMessages[0];
+        if (msg === '[ФОТО wifi роутера]') {
+            textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+        } else if (msg === '[ФОТО 4-ёх жильного кабеля]') {
+            textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+        } else {
+            textEl.innerText = msg;
+        }
+
         textEl.style.transform = 'scale(1)';
         textEl.style.opacity = '1';
         
@@ -371,7 +373,14 @@ class IntroScene extends Phaser.Scene {
             textEl.style.opacity = '0.5';
             
             setTimeout(() => {
-                textEl.innerText = this.activeMessages[this.currentMessageIndex];
+                let nextMsg = this.activeMessages[this.currentMessageIndex];
+                if (nextMsg === '[ФОТО wifi роутера]') {
+                    textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+                } else if (nextMsg === '[ФОТО 4-ёх жильного кабеля]') {
+                    textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+                } else {
+                    textEl.innerText = nextMsg;
+                }
                 textEl.style.transform = 'scale(1)';
                 textEl.style.opacity = '1';
             }, 150);
@@ -940,7 +949,7 @@ class MainWorkspaceScene extends Phaser.Scene {
 
        // === КАНБАН-ДОСКА (В КОНТЕЙНЕРЕ) ===
         // Чтобы опустить доску еще ниже, увеличь цифру 80. Чтобы поднять — уменьши.
-        const boardContainer = this.add.container(25, 117);
+        const boardContainer = this.add.container(25, 35);
         boardContainer.setScale(0.85); 
 
         let shadowK = this.add.rectangle(235, 225, 380, 250, 0x000000, 0.2); 
@@ -966,25 +975,61 @@ class MainWorkspaceScene extends Phaser.Scene {
         boardContainer.add([shadowK, board, bgWhiteK, line1K, line2K, line3K, header1K, header2K, header3K, header4K, note1K, note2K, note3K, note4K, note5K, note6K, note7K]);
         // ===================================
 
-        const book = this.add.container(150, 610).setDepth(2);
-        const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
-        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); 
-        const bookText = this.add.text(10, 0, 'СПРАВОЧНИК', { font: 'bold 16px Courier', fill: '#cccccc' }).setOrigin(0.5);
-        book.add([bookBg, bookSpine, bookText]);
-        book.setInteractive(new Phaser.Geom.Rectangle(-70, -50, 140, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
-
-        const networkMap = this.add.container(320, 610).setDepth(2);
-        const mapBg = this.add.rectangle(0, 0, 160, 100, 0x0a1910).setStrokeStyle(2, 0x00aa00);
-        const mapTextHeader = this.add.text(0, -15, 'СХЕМА СЕТИ', { font: 'bold 18px Courier', fill: '#00ff00' }).setOrigin(0.5);
-        const mapTextIP = this.add.text(0, 20, '192.168.8.x', { font: '14px Courier', fill: '#008800' }).setOrigin(0.5);
-        networkMap.add([mapBg, mapTextHeader, mapTextIP]);
-        networkMap.setInteractive(new Phaser.Geom.Rectangle(-80, -50, 160, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
-
-        book.on('pointerover', () => { bookBg.setStrokeStyle(2, 0xffa500); bookText.setColor('#ffa500'); });
-        book.on('pointerout', () => { bookBg.setStrokeStyle(2, 0x555555); bookText.setColor('#cccccc'); });
+        // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
+        const book = this.add.container(300, 610).setDepth(2);
         
-        networkMap.on('pointerover', () => { mapBg.setStrokeStyle(2, 0xffffff); mapTextHeader.setColor('#ffffff'); });
-        networkMap.on('pointerout', () => { mapBg.setStrokeStyle(2, 0x00aa00); mapTextHeader.setColor('#00ff00'); });
+        // --- СОЗДАЕМ ТЕНЬ ---
+        const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
+        bookShadow.setScale(0.5); // Тот же масштаб
+        bookShadow.setTint(0x000000); 
+        bookShadow.setAlpha(0.35); 
+        
+        // --- САМА КНИГА ---
+        const bookImg = this.add.image(0, 0, 'spravochnik');
+        let baseScale = 0.5; 
+        bookImg.setScale(baseScale);
+        
+        // Добавляем тень ПЕРВОЙ в контейнер, чтобы она была под картинкой
+        book.add([bookShadow, bookImg]);
+        
+        // Автоматически вычисляем зону для клика на основе финального размера картинки
+        const hitW = bookImg.displayWidth;
+        const hitH = bookImg.displayHeight;
+        book.setInteractive(new Phaser.Geom.Rectangle(-hitW/2, -hitH/2, hitW, hitH), Phaser.Geom.Rectangle.Contains);
+        book.input.cursor = 'pointer';
+        // ===================================
+        // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
+        const networkMap = this.add.container(580, 610).setDepth(2);
+        
+        // --- СОЗДАЕМ ТЕНЬ ---
+        const mapShadow = this.add.image(5, 7, 'shemaseti'); // Сдвиг (5, 7)
+        mapShadow.setScale(0.4);
+        mapShadow.setTint(0x000000);
+        mapShadow.setAlpha(0.35);
+        
+        // --- САМА СХЕМА ---
+        const mapImg = this.add.image(0, 0, 'shemaseti');
+        let mapBaseScale = 0.4; 
+        mapImg.setScale(mapBaseScale);
+        
+        // Добавляем тень ПЕРВОЙ в контейнер
+        networkMap.add([mapShadow, mapImg]);
+        
+        // Автоматически вычисляем зону для клика
+        const mapHitW = mapImg.displayWidth;
+        const mapHitH = mapImg.displayHeight;
+        networkMap.setInteractive(new Phaser.Geom.Rectangle(-mapHitW/2, -mapHitH/2, mapHitW, mapHitH), Phaser.Geom.Rectangle.Contains);
+        networkMap.input.cursor = 'pointer';
+        // ===================================
+
+        // При наведении мыши книга чуть увеличивается (+5%)
+        book.on('pointerover', () => { bookImg.setScale(baseScale + 0.05); });
+        // При отведении возвращается к базовому размеру
+        book.on('pointerout', () => { bookImg.setScale(baseScale); });
+        // При наведении мыши схема чуть увеличивается (+5%)
+        networkMap.on('pointerover', () => { mapImg.setScale(mapBaseScale + 0.05); });
+        // При отведении возвращается к базовому размеру
+        networkMap.on('pointerout', () => { mapImg.setScale(mapBaseScale); });
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
@@ -1400,6 +1445,7 @@ jumpToLevel(level) {
                     <ul class="book-list">
                         <li><strong>Proxy:</strong> служит для раздачи интернета пользователям.</li>
                         <li style="color: #ff8a65;"><strong>Внимание:</strong> Если не установлен или не запущен антивирус Касперского на рабочей станции, доступ к интернету прекращается.</li>
+                        <li><strong>SSH-доступ:</strong> Для входа по ssh на компьютеры пользователей используется учётная запись <code>admin</code>.</li>
                     </ul>
                 </div>
                 <div class="book-section" style="border-left-color: #ff8a65;">
