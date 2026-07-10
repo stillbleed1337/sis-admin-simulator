@@ -286,7 +286,7 @@ class IntroScene extends Phaser.Scene {
         this.htmlDialogDOM = this.add.dom(640, 360).createFromHTML(dialogHTML).setDepth(101).setVisible(false);
     }
 
-    // === 2. ВЫЗОВ HTML ДИАЛОГА ===
+   // === 2. ВЫЗОВ HTML ДИАЛОГА (С ПОДДЕРЖКОЙ КАРТИНОК) ===
     showDialog(sender, messages, isGameOver = false) {
         this.isGameOverState = isGameOver; 
         this.activeMessages = messages; 
@@ -300,10 +300,10 @@ class IntroScene extends Phaser.Scene {
 
         senderEl.innerText = sender;
         
-        // === ВАЖНО: Сбрасываем позицию для всех остальных! ===
         avatarImgEl.style.backgroundPosition = "center";
         avatarImgEl.style.backgroundSize = "cover";
 
+        // ... (твоя логика смены аватарок остается без изменений) ...
         if (sender === 'Жорик') {
             senderEl.style.color = '#ff8a65';
             avatarEl.style.borderColor = '#ff8a65';
@@ -324,22 +324,24 @@ class IntroScene extends Phaser.Scene {
             senderEl.style.color = '#ffb74d';
             avatarEl.style.borderColor = '#ffb74d';
             avatarImgEl.style.backgroundImage = "url('assets/images/barmen.png')";
-            
-            // === ЖЕСТКАЯ ПРИВЯЗКА В ПИКСЕЛЯХ ===
-            // Сдвигаем фон вниз ровно на 20 пикселей, чтобы вытащить макушку из-под обрезки
             avatarImgEl.style.backgroundPosition = "center 20px"; 
-            
-            // Настраиваем зум (если лицо мелкое — ставь 180%, если крупное — 120%)
             avatarImgEl.style.backgroundSize = "150%"; 
-            
         } else {
             senderEl.style.color = '#ffffff';
             avatarEl.style.borderColor = '#555555';
             avatarImgEl.style.backgroundImage = "none";
         }
 
-        // Подставляем текст и сбрасываем стили
-        textEl.innerText = this.activeMessages[0];
+        // === ИЗМЕНЕНИЕ ТУТ: ЛОГИКА ОТОБРАЖЕНИЯ КАРТИНКИ ===
+        let msg = this.activeMessages[0];
+        if (msg === '[ФОТО wifi роутера]') {
+            textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+        } else if (msg === '[ФОТО 4-ёх жильного кабеля]') {
+            textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+        } else {
+            textEl.innerText = msg;
+        }
+
         textEl.style.transform = 'scale(1)';
         textEl.style.opacity = '1';
         
@@ -373,7 +375,14 @@ class IntroScene extends Phaser.Scene {
             textEl.style.opacity = '0.5';
             
             setTimeout(() => {
-                textEl.innerText = this.activeMessages[this.currentMessageIndex];
+                let nextMsg = this.activeMessages[this.currentMessageIndex];
+                if (nextMsg === '[ФОТО wifi роутера]') {
+                    textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+                } else if (nextMsg === '[ФОТО 4-ёх жильного кабеля]') {
+                    textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
+                } else {
+                    textEl.innerText = nextMsg;
+                }
                 textEl.style.transform = 'scale(1)';
                 textEl.style.opacity = '1';
             }, 150);
