@@ -8,8 +8,6 @@ class BootScene extends Phaser.Scene {
     preload() {
         // --- КАРТИНКИ ---
         this.load.image('fon', 'assets/images/fon.png');
-        this.load.image('spravochnik', 'assets/images/spravochnik.png');
-        this.load.image('shemaseti', 'assets/images/shemaseti.png');
         this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
         this.load.image('blue', 'assets/images/blue.png');
@@ -250,8 +248,8 @@ class IntroScene extends Phaser.Scene {
             // Как только сцена появилась, запускаем таймер на 2 секунды (2000 мс)
             this.time.delayedCall(2000, () => {
                 this.showDialog('Бармен', [
-                    'Привет! Добро пожаловать в наше IT-кафе.',
-                    'Админы обычно заказывают этот сет мороженого.',
+                    'Привет! Добро пожаловать в наше кафе.',
+                    'Админы обычно заказывают это мороженое.',
                     'В какой последовательности ты бы его попробовал?',
                     'Кликай по стаканчикам в правильном порядке!'
                 ]);
@@ -489,101 +487,168 @@ class ServerRackScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.fadeIn(500, 0, 0, 0);
-
         this.mainScene = this.scene.get('MainWorkspaceScene');
-        this.ports = {};          // portId -> {x, y}
-        this.portOccupancy = {};  // portId -> cableId
+        this.ports = {};          
+        this.portOccupancy = {};  
         this.cables = [];
-        this.solved = false;
+        this.leds = []; // Массив для моргающих лампочек
 
-        // Питание маршрутизаторов переживает выход/вход в серверную - берём из общего sysState.
-        this.router1On = this.mainScene && this.mainScene.sysState ? this.mainScene.sysState.inc3Router1On : true;
-        this.router2On = this.mainScene && this.mainScene.sysState ? this.mainScene.sysState.inc3Router2On : false;
+        // ==========================================
+        // ЗАГРУЗКА СОХРАНЕННЫХ СОСТОЯНИЙ (ФИКС БАГА)
+        // ==========================================
+        let st = this.mainScene && this.mainScene.sysState ? this.mainScene.sysState : {};
+        
+        this.router1On = st.inc3Router1On !== undefined ? st.inc3Router1On : true;
+        this.router2On = st.inc3Router2On !== undefined ? st.inc3Router2On : false;
+        
+        // Если прогресс 13 (INC3_CHECKING) или выше, значит инцидент уже решен
+        this.solved = (st.progress >= 13); 
 
-        // Темный фон серверной
-        this.add.rectangle(640, 360, 1280, 720, 0x15181a); 
-        this.add.text(640, 25, 'СЕРВЕРНАЯ', { font: 'bold 24px Arial', fill: '#00ff00' }).setOrigin(0.5);
-        this.add.text(640, 50, 'Основной маршрутизатор упал. Перекиньте красный и жёлтые провода на резервный и включите его.', { font: '14px Arial', fill: '#aaaaaa' }).setOrigin(0.5);
+        // Загружаем сохраненные позиции подвижных концов проводов (или ставим дефолтные)
+        let red_B = st.inc3_red_B || 'r1_wan_0';
+        let y1_B = st.inc3_y1_B || 'r1_lan_0';
+        let y2_B = st.inc3_y2_B || 'r1_lan_1';
 
-        // Каркас и рельсы
-        this.add.rectangle(640, 400, 620, 680, 0x111314).setStrokeStyle(4, 0x333333);
-        this.add.rectangle(360, 400, 30, 680, 0x1a1c1e).setStrokeStyle(1, 0x000000);
-        this.add.rectangle(920, 400, 30, 680, 0x1a1c1e).setStrokeStyle(1, 0x000000);
+        // ==========================================
+        // ФОН И ДИЗАЙН ШКАФА
+        // ==========================================
+        this.add.rectangle(640, 360, 1280, 720, 0x111417);
+        let titleText = this.solved ? 'СЕРВЕРНАЯ (Штатный режим)' : 'СЕРВЕРНАЯ (Инцидент)';
+        let titleColor = this.solved ? '#00ff00' : '#ffaa00';
+        this.add.text(640, 22, titleText, { font: 'bold 22px Arial', fill: titleColor }).setOrigin(0.5);
+        
+        if (!this.solved) {
+            this.add.text(640, 45, 'Основной маршрутизатор вышел из строя. Перейдите на холодный резерв.', { font: '14px Arial', fill: '#aaaaaa' }).setOrigin(0.5);
+        }
 
+        // Внешний корпус шкафа
+        this.add.rectangle(640, 390, 700, 660, 0x171a1c).setStrokeStyle(6, 0x2a2e33); 
+        // Внутренняя темнота (глубина)
+        this.add.rectangle(640, 390, 640, 640, 0x07080a); 
+        
+        // Рельсы (органайзеры)
+        this.add.rectangle(320, 390, 40, 640, 0x101214).setStrokeStyle(2, 0x222222); 
+        this.add.rectangle(960, 390, 40, 640, 0x101214).setStrokeStyle(2, 0x222222);
+        
+        // Отрисовка отверстий для крепления оборудования (U-слоты) на рельсах
+        for(let y = 85; y < 700; y += 15) {
+            this.add.rectangle(320, y, 10, 6, 0x000000);
+            this.add.rectangle(960, y, 10, 6, 0x000000);
+        }
+
+        // ==========================================
+        // ФУНКЦИИ ОТРИСОВКИ ОБОРУДОВАНИЯ
+        // ==========================================
         const createDevice = (cx, cy, w, h, color, name) => {
             let bg = this.add.rectangle(cx, cy, w, h, color).setStrokeStyle(2, 0x000000);
-            this.add.text(cx - w/2 + 15, cy - h/2 + 6, name, { font: 'bold 13px Arial', fill: '#dddddd' }).setOrigin(0, 0);
+            // Стеклянный блик сверху для объема
+            this.add.rectangle(cx, cy - h / 2 + 6, w - 4, 10, 0xffffff, 0.04);
+            this.add.text(cx - w / 2 + 15, cy - h / 2 + 4, name, { font: 'bold 12px Arial', fill: '#eeeeee' }).setOrigin(0, 0);
+            
+            // Добавляем лампочку активности (Status LED) справа
+            let led = this.add.circle(cx + w / 2 - 20, cy, 3, 0x00ff00);
+            this.leds.push(led);
             return bg;
         };
 
-        // register=true -> точка становится "портом", в который можно воткнуть провод (и запоминаем её позицию)
-        const createPorts = (startX, startY, count, spacing, prefix) => {
+        const addPortGroup = (x, y, count, spacing, bgColor, prefix) => {
+            if (bgColor) {
+                this.add.rectangle(x + ((count-1)*spacing)/2, y, count * spacing + 4, 18, bgColor);
+            }
             for (let i = 0; i < count; i++) {
-                let px = startX + (i * spacing);
-                this.add.rectangle(px, startY, 14, 14, 0x000000).setStrokeStyle(1, 0x555555);
-                this.add.rectangle(px, startY - 5, 8, 4, 0x111111);
-                this.ports[`${prefix}_${i}`] = { x: px, y: startY };
+                let px = x + (i * spacing);
+                this.add.rectangle(px, y, 14, 14, 0x050505).setStrokeStyle(1, 0x333333);
+                this.add.rectangle(px, y - 4, 8, 4, 0x1a1a1a);
+                this.ports[`${prefix}_${i}`] = { x: px, y: y };
             }
         };
 
-        // 1. Маршрутизаторы
-        createDevice(640, 100, 520, 50, 0x242a30, 'Маршрутизатор Провайдера');
-        createPorts(870, 105, 1, 20, 'provider');
+        const createPowerBtn = (x, y) => {
+            this.add.circle(x, y, 10, 0x111111).setStrokeStyle(2, 0x000000); // База кнопки
+            let btn = this.add.circle(x, y, 6, 0x00ff00).setInteractive({ useHandCursor: true });
+            return btn;
+        };
 
-        createDevice(490, 160, 220, 50, 0x1e3647, 'Маршрутизатор 1');
-        createPorts(430, 165, 3, 20, 'r1');
-        this.router1PowerBtn = this.add.rectangle(580, 145, 16, 16, 0x00ff00).setStrokeStyle(1, 0x000000).setInteractive({ useHandCursor: true });
-
-        createDevice(790, 160, 220, 50, 0x362121, 'Маршрутизатор (Резерв)');
-        createPorts(730, 165, 3, 20, 'reserv');
-        this.router2PowerBtn = this.add.rectangle(880, 145, 16, 16, 0xff0000).setStrokeStyle(1, 0x000000).setInteractive({ useHandCursor: true });
-
-        // 2. Шлюзы 
-        createDevice(490, 220, 220, 50, 0x1d3d25, 'VipNet Coordinator HW100');
-        createPorts(430, 225, 3, 20, 'vipnet');
-
-        createDevice(790, 220, 220, 50, 0x242a30, 'VoIP Шлюз');
-        createPorts(700, 225, 9, 18, 'voip');
-
-        // 3. Патч-панели
-        createDevice(640, 280, 520, 40, 0x17191a, 'Патч-панель 2');
-        createPorts(410, 285, 4, 18, 'pp2');
-
-        createDevice(640, 330, 520, 40, 0x17191a, 'Патч-панель 1');
-        createPorts(410, 335, 6, 18, 'pp1');
-
-        // 4. Коммутаторы
-        createDevice(640, 410, 520, 80, 0x252e38, 'Коммутатор 1 (10.138.10.0/24)');
-        createPorts(410, 405, 14, 18, 'sw1a');
-        createPorts(410, 425, 14, 18, 'sw1b');
-
-        createDevice(640, 500, 520, 80, 0x252e38, 'Коммутатор 2 (10.138.5.0/24)');
-        createPorts(410, 495, 14, 18, 'sw2a');
-        createPorts(410, 515, 14, 18, 'sw2b');
-
-        // 5. ИБП
-        createDevice(640, 600, 520, 80, 0x0f0f0f, 'ИБП Стоечный');
-        this.add.rectangle(430, 610, 80, 40, 0x003300);
-        this.add.text(398, 610, '220V', { font: 'bold 16px Courier', fill: '#00ff00' }).setOrigin(0, 0.5);
+        this.dropHighlight = this.add.rectangle(0, 0, 18, 18, 0xffffff, 0.8)
+            .setStrokeStyle(2, 0xff0000).setDepth(10).setVisible(false);
 
         // ==========================================
-        // ПРОВОДА
+        // РАЗМЕЩЕНИЕ ОБОРУДОВАНИЯ
         // ==========================================
-        // Декоративные (статичные) - собирают "живую" картину шкафа, но не участвуют в проверке.
-        // VoIP -> Патч-панель 2 (3 линии) и Патч-панель 1 (5 линий), как описано в схеме.
-        for (let i = 0; i < 3; i++) this.createCable(`deco_voip_pp2_${i}`, 0x29b6f6, `voip_${i}`, `pp2_${i}`, false);
-        for (let i = 0; i < 5; i++) this.createCable(`deco_voip_pp1_${i}`, 0x29b6f6, `voip_${3 + i}`, `pp1_${i}`, false);
-        // Патч-панели -> Коммутаторы
-        this.createCable('deco_pp2_sw2', 0x1b5e20, 'pp2_3', 'sw2a_0', false);
-        this.createCable('deco_pp1_sw1', 0x1b5e20, 'pp1_5', 'sw1a_0', false);
+        createDevice(640, 100, 560, 45, 0x242a30, 'Маршрутизатор Провайдера');
+        addPortGroup(890, 108, 1, 20, null, 'provider'); 
 
-        // Интерактивные - именно их нужно перекинуть на резерв.
-        this.cableRed = this.createCable('red', 0xe53935, 'provider_0', 'r1_0', true);
-        this.cableYellow1 = this.createCable('yellow1', 0xfdd835, 'vipnet_0', 'r1_1', true);
-        this.cableYellow2 = this.createCable('yellow2', 0xfdd835, 'voip_8', 'r1_2', true);
+        createDevice(490, 160, 250, 55, 0x282c2f, 'Маршрутизатор 1 (ОСНОВНОЙ)');
+        this.router1PowerBtn = createPowerBtn(380, 172);
+        addPortGroup(450, 172, 4, 20, 0xffeb3b, 'r1_lan'); 
+        addPortGroup(545, 172, 1, 20, 0x03a9f4, 'r1_wan'); 
 
-        // --- Кнопки питания ---
+        createDevice(790, 160, 250, 55, 0x282c2f, 'Маршрутизатор 2 (РЕЗЕРВ)');
+        this.router2PowerBtn = createPowerBtn(680, 172);
+        addPortGroup(750, 172, 4, 20, 0xffeb3b, 'r2_lan'); 
+        addPortGroup(845, 172, 1, 20, 0x03a9f4, 'r2_wan'); 
+
+        createDevice(490, 230, 250, 55, 0x224982, 'VipNet Coordinator HW100');
+        addPortGroup(450, 242, 4, 20, 0x111111, 'vipnet'); 
+
+        createDevice(790, 230, 250, 55, 0x1c1e20, 'VoIP Шлюз');
+        addPortGroup(680, 242, 2, 20, 0x03a9f4, 'voip_wan'); 
+        addPortGroup(730, 242, 8, 20, 0x8bc34a, 'voip_fxs'); 
+
+        createDevice(640, 310, 560, 45, 0x151719, 'Патч-панель 2');
+        addPortGroup(385, 323, 24, 18, null, 'pp2');
+
+        createDevice(640, 370, 560, 45, 0x151719, 'Патч-панель 1');
+        addPortGroup(385, 383, 24, 18, null, 'pp1');
+
+        createDevice(640, 460, 560, 75, 0x222a33, 'Коммутатор 1 (10.138.10.0/24)');
+        addPortGroup(385, 455, 24, 18, null, 'sw1a');
+        addPortGroup(385, 478, 24, 18, null, 'sw1b');
+
+        createDevice(640, 550, 560, 75, 0x222a33, 'Коммутатор 2 (10.138.5.0/24)');
+        addPortGroup(385, 545, 24, 18, null, 'sw2a');
+        addPortGroup(385, 568, 24, 18, null, 'sw2b');
+
+        createDevice(640, 655, 560, 65, 0x0f0f0f, 'ИБП Стоечный');
+        this.add.rectangle(640, 665, 80, 30, 0x002200).setStrokeStyle(1, 0x333333);
+        this.add.text(640, 665, '220V', { font: 'bold 16px Courier', fill: '#00ff00' }).setOrigin(0.5, 0.5);
+
+        // ==========================================
+        // ПРОКЛАДКА КАБЕЛЕЙ
+        // ==========================================
+        let decoWireIndex = 0;
+        
+        for (let i = 0; i < 3; i++) this.createCable(`blue_pp2_${i}`, 0x29b6f6, `voip_fxs_${i}`, `pp2_${23 - i}`, 'none', 'orthogonal', decoWireIndex++);
+        for (let i = 0; i < 5; i++) this.createCable(`blue_pp1_${i}`, 0x29b6f6, `voip_fxs_${3 + i}`, `pp1_${23 - i}`, 'none', 'orthogonal', decoWireIndex++);
+        
+        this.createCable('green_sw1', 0x66bb6a, 'vipnet_0', 'sw1a_0', 'none', 'orthogonal', decoWireIndex++);
+        this.createCable('green_sw2', 0x66bb6a, 'vipnet_1', 'sw2a_0', 'none', 'orthogonal', decoWireIndex++);
+
+        // ИНТЕРАКТИВНЫЕ КАБЕЛИ ДЛЯ ЗАДАНИЯ
+        // Теперь параметр 'B' означает, что только конец B (подключенный к Маршрутизатору) можно дергать мышой!
+        let cableState = this.solved ? 'none' : 'B';
+        this.cableRed = this.createCable('red', 0xe53935, 'provider_0', red_B, cableState, 'bezier');
+        this.cableYellow1 = this.createCable('yellow1', 0xfdd835, 'vipnet_2', y1_B, cableState, 'bezier');
+        this.cableYellow2 = this.createCable('yellow2', 0xfdd835, 'voip_wan_0', y2_B, cableState, 'bezier');
+
+        // ==========================================
+        // АНИМАЦИЯ ЛАМПОЧЕК (ЖИВОЙ ШКАФ)
+        // ==========================================
+        this.time.addEvent({
+            delay: 400, loop: true,
+            callback: () => {
+                this.leds.forEach(led => {
+                    // Лампочки мигают хаотично, создавая эффект передачи данных
+                    led.setAlpha(Math.random() > 0.3 ? 1 : 0.2); 
+                });
+            }
+        });
+
+        // ==========================================
+        // ЛОГИКА ПИТАНИЯ
+        // ==========================================
         this.updatePowerVisuals();
+        
         this.router1PowerBtn.on('pointerdown', () => {
             if (this.solved) return;
             this.sound.play('closeClick');
@@ -591,6 +656,7 @@ class ServerRackScene extends Phaser.Scene {
             this.updatePowerVisuals();
             this.checkSolution();
         });
+        
         this.router2PowerBtn.on('pointerdown', () => {
             if (this.solved) return;
             this.sound.play('closeClick');
@@ -599,73 +665,74 @@ class ServerRackScene extends Phaser.Scene {
             this.checkSolution();
         });
 
-        // ==========================================
-        // КНОПКА ВОЗВРАТА
-        // ==========================================
-        let backBtn = this.add.text(50, 30, '◀ В КАБИНЕТ', { 
-            font: '20px Arial', fill: '#ffffff', backgroundColor: '#555555', padding: {x: 15, y: 10} 
+        let backBtn = this.add.text(45, 25, '◀ В КАБИНЕТ', {
+            font: '18px Arial', fill: '#ffffff', backgroundColor: '#555555', padding: { x: 14, y: 9 }
         }).setInteractive({ useHandCursor: true });
-        
-        backBtn.on('pointerdown', () => {
-            if (this.solved) return; // идёт автовозврат после успешного решения
-            this.sound.play('closeClick');
 
+        backBtn.on('pointerdown', () => {
+            this.sound.play('closeClick');
             this.cameras.main.fadeOut(300, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
-                // ВАЖНО: сцену будим (wake), а не создаём заново - в MainWorkspaceScene
-                // всё это время сохранялся весь стейт (sysState, чаты, терминал).
                 this.scene.wake('MainWorkspaceScene');
-                let mainScene = this.scene.get('MainWorkspaceScene');
-                if (mainScene && mainScene.cameras && mainScene.cameras.main) {
-                    mainScene.cameras.main.fadeIn(400, 0, 0, 0);
+                if (this.mainScene && this.mainScene.cameras && this.mainScene.cameras.main) {
+                    this.mainScene.cameras.main.fadeIn(400, 0, 0, 0);
                 }
                 this.scene.stop('ServerRackScene');
             });
         });
     }
 
-    // ---------- Провода: создание, отрисовка, drag&drop, покачивание ----------
+    // ---------- ЛОГИКА КАБЕЛЕЙ ----------
 
-    createCable(id, color, endAPortId, endBPortId, interactive) {
+    createCable(id, color, endAPortId, endBPortId, interactiveMode, routingStyle, index = 0) {
         this.occupyPort(endAPortId, id);
         this.occupyPort(endBPortId, id);
 
         let cable = {
-            id, color, interactive,
+            id, color, routingStyle, index, 
             ends: { A: { portId: endAPortId }, B: { portId: endBPortId } },
-            lockedEnd: null,
-            wobbleAmt: 0,
-            graphics: this.add.graphics()
+            wobbleAmt: 0, wobbleTween: null, dragging: false,
+            graphics: this.add.graphics().setDepth(1)
         };
-        cable.redraw = () => this.redrawCable(cable);
+        cable.redraw = () => { if (!cable.dragging) this.redrawCable(cable); };
         this.cables.push(cable);
-        cable.redraw();
+        this.redrawCable(cable);
 
-        // Лёгкое покачивание при наведении мышкой - работает на ЛЮБОМ проводе в шкафу.
-        let pA = this.ports[endAPortId], pB = this.ports[endBPortId];
-        let zoneX = (pA.x + pB.x) / 2, zoneY = (pA.y + pB.y) / 2 + 14;
-        let zoneW = Math.max(28, Math.abs(pA.x - pB.x) + 16);
-        let zoneH = Math.max(28, Math.abs(pA.y - pB.y) + 36);
-        let hoverZone = this.add.zone(zoneX, zoneY, zoneW, zoneH).setInteractive();
-        hoverZone.on('pointerover', () => {
-            this.tweens.add({
-                targets: cable, wobbleAmt: 1, duration: 180, yoyo: true, repeat: 2,
+        const wobble = () => {
+            if (cable.dragging || cable.wobbleTween) return;
+            cable.wobbleTween = this.tweens.add({
+                targets: cable, wobbleAmt: 1, duration: 150, yoyo: true, repeat: 1,
                 onUpdate: () => cable.redraw(),
-                onComplete: () => { cable.wobbleAmt = 0; cable.redraw(); }
+                onComplete: () => { cable.wobbleAmt = 0; cable.wobbleTween = null; cable.redraw(); }
             });
-        });
-        cable.hoverZone = hoverZone;
+        };
 
-        if (interactive) {
-            cable.endAHandle = this.add.circle(pA.x, pA.y, 9, color, 1).setStrokeStyle(2, 0xffffff, 0.7).setInteractive({ useHandCursor: true });
-            cable.endBHandle = this.add.circle(pB.x, pB.y, 9, color, 1).setStrokeStyle(2, 0xffffff, 0.7).setInteractive({ useHandCursor: true });
-            this.input.setDraggable(cable.endAHandle);
-            this.input.setDraggable(cable.endBHandle);
-            this.setupCableEndDrag(cable, 'A', cable.endAHandle);
-            this.setupCableEndDrag(cable, 'B', cable.endBHandle);
+        let pA = this.ports[endAPortId], pB = this.ports[endBPortId];
+
+        // Отрисовка концов. Делаем интерактивным ТОЛЬКО нужный конец.
+        if (interactiveMode === 'A' || interactiveMode === 'both') {
+            cable.endAHandle = this.createHandle(pA.x, pA.y, color, cable, 'A', wobble);
+        } else {
+            this.add.zone(pA.x, pA.y, 20, 20).setInteractive().on('pointerover', wobble);
+        }
+
+        if (interactiveMode === 'B' || interactiveMode === 'both') {
+            cable.endBHandle = this.createHandle(pB.x, pB.y, color, cable, 'B', wobble);
+        } else {
+            this.add.zone(pB.x, pB.y, 20, 20).setInteractive().on('pointerover', wobble);
         }
 
         return cable;
+    }
+
+    createHandle(x, y, color, cable, endName, wobbleFn) {
+        let handle = this.add.circle(x, y, 5, color, 1).setStrokeStyle(1, 0xffffff, 0.8)
+            .setInteractive(new Phaser.Geom.Circle(5, 5, 12), Phaser.Geom.Circle.Contains).setDepth(2);
+        
+        this.input.setDraggable(handle);
+        handle.on('pointerover', wobbleFn);
+        this.setupCableEndDrag(cable, endName, handle);
+        return handle;
     }
 
     redrawCable(cable, liveEnd, liveX, liveY) {
@@ -673,64 +740,95 @@ class ServerRackScene extends Phaser.Scene {
         let pB = (liveEnd === 'B') ? { x: liveX, y: liveY } : this.ports[cable.ends.B.portId];
         if (!pA || !pB) return;
 
-        let mx = (pA.x + pB.x) / 2;
-        let my = (pA.y + pB.y) / 2 + 16 + Math.sin(this.time.now * 0.006) * 5 * cable.wobbleAmt;
-
         cable.graphics.clear();
-        cable.graphics.lineStyle(4, cable.color, 1);
+        // Красивая тень под проводом
+        cable.graphics.lineStyle(4, 0x000000, 0.5);
+        this.drawPath(cable, pA, pB, liveEnd, 2); 
+        // Сам цветной провод
+        cable.graphics.lineStyle(3, cable.color, 1);
+        this.drawPath(cable, pA, pB, liveEnd, 0);
+    }
+
+    drawPath(cable, pA, pB, liveEnd, offsetY) {
         cable.graphics.beginPath();
-        cable.graphics.moveTo(pA.x, pA.y);
-        const STEPS = 14;
-        for (let i = 1; i <= STEPS; i++) {
-            let t = i / STEPS;
-            let x = (1 - t) * (1 - t) * pA.x + 2 * (1 - t) * t * mx + t * t * pB.x;
-            let y = (1 - t) * (1 - t) * pA.y + 2 * (1 - t) * t * my + t * t * pB.y;
-            cable.graphics.lineTo(x, y);
+        cable.graphics.moveTo(pA.x, pA.y + offsetY);
+
+        if (cable.routingStyle === 'orthogonal' && !cable.dragging && !liveEnd) {
+            let isLeftSide = (pA.x + pB.x) / 2 < 640;
+            let sideXBase = isLeftSide ? 330 : 950;
+            let sideX = sideXBase + (isLeftSide ? -(cable.index * 3) : (cable.index * 3)); 
+            let dropOffset = 15 + (cable.index % 4) * 4;
+            
+            cable.graphics.lineTo(pA.x, pA.y + dropOffset + offsetY);
+            cable.graphics.lineTo(sideX, pA.y + dropOffset + offsetY);
+            cable.graphics.lineTo(sideX, pB.y + dropOffset + offsetY);
+            cable.graphics.lineTo(pB.x, pB.y + dropOffset + offsetY);
+            cable.graphics.lineTo(pB.x, pB.y + offsetY);
+        } else {
+            let midX = (pA.x + pB.x) / 2;
+            let midY = (pA.y + pB.y) / 2;
+            let sagBias = 40 + Math.sin(this.time.now * 0.006) * 5 * cable.wobbleAmt;
+            
+            const STEPS = 20;
+            for (let i = 1; i <= STEPS; i++) {
+                let t = i / STEPS;
+                let x = (1 - t) * (1 - t) * pA.x + 2 * (1 - t) * t * midX + t * t * pB.x;
+                let y = (1 - t) * (1 - t) * pA.y + 2 * (1 - t) * t * (midY + sagBias) + t * t * pB.y;
+                cable.graphics.lineTo(x, y + offsetY);
+            }
         }
         cable.graphics.strokePath();
     }
 
     setupCableEndDrag(cable, endName, handle) {
-        let otherName = endName === 'A' ? 'B' : 'A';
-
         handle.on('dragstart', () => {
             if (this.solved) return;
-            // Как только потянули один конец - другой навсегда фиксируется (его нельзя будет выдернуть).
-            if (cable.lockedEnd === null) {
-                cable.lockedEnd = otherName;
-                let otherHandle = otherName === 'A' ? cable.endAHandle : cable.endBHandle;
-                otherHandle.disableInteractive();
-                otherHandle.setAlpha(0.55);
+            cable.dragging = true;
+            if (cable.wobbleTween) { cable.wobbleTween.stop(); cable.wobbleTween = null; cable.wobbleAmt = 0; }
+            this.sound.play('clickIce');
+        });
+
+        handle.on('drag', (pointer) => {
+            if (this.solved) return;
+            handle.x = pointer.x; 
+            handle.y = pointer.y;
+            this.redrawCable(cable, endName, pointer.x, pointer.y);
+
+            let nearest = this.findNearestFreePort(pointer.x, pointer.y, cable);
+            if (nearest && nearest !== cable.ends[endName].portId) {
+                this.dropHighlight.setPosition(this.ports[nearest].x, this.ports[nearest].y).setVisible(true);
+            } else {
+                this.dropHighlight.setVisible(false);
             }
         });
 
-        handle.on('drag', (pointer, dragX, dragY) => {
-            if (this.solved || cable.lockedEnd === endName) return;
-            handle.x = dragX; handle.y = dragY;
-            this.redrawCable(cable, endName, dragX, dragY);
-        });
+        handle.on('dragend', (pointer) => {
+            if (this.solved) return;
+            cable.dragging = false;
+            this.dropHighlight.setVisible(false);
 
-        handle.on('dragend', (pointer, dragX, dragY) => {
-            if (this.solved || cable.lockedEnd === endName) return;
-            let nearest = this.findNearestFreePort(dragX, dragY, cable);
+            let nearest = this.findNearestFreePort(pointer.x, pointer.y, cable);
             if (nearest) {
                 this.freePort(cable.ends[endName].portId);
                 cable.ends[endName].portId = nearest;
                 this.occupyPort(nearest, cable.id);
             }
+            
             let p = this.ports[cable.ends[endName].portId];
-            handle.x = p.x; handle.y = p.y;
+            handle.x = p.x; 
+            handle.y = p.y;
             cable.redraw();
+            
             this.sound.play('closeClick');
             this.checkSolution();
         });
     }
 
     findNearestFreePort(x, y, cable) {
-        let bestId = null, bestDist = 36; // радиус прилипания
+        let bestId = null, bestDist = 45; 
         for (let id in this.ports) {
             let occ = this.portOccupancy[id];
-            if (occ && occ !== cable.id) continue; // занято другим проводом
+            if (occ && occ !== cable.id) continue; 
             let p = this.ports[id];
             let d = Phaser.Math.Distance.Between(x, y, p.x, p.y);
             if (d < bestDist) { bestDist = d; bestId = id; }
@@ -741,9 +839,10 @@ class ServerRackScene extends Phaser.Scene {
     occupyPort(id, cableId) { this.portOccupancy[id] = cableId; }
     freePort(id) { if (this.portOccupancy[id]) delete this.portOccupancy[id]; }
 
-    // ---------- Питание и проверка решения ----------
+    // ---------- ПРОВЕРКА ЗАДАНИЯ ----------
 
     updatePowerVisuals() {
+        // Убрал тускло-зеленый. Теперь выключенная кнопка ярко-красная, включенная - ярко-зеленая
         this.router1PowerBtn.setFillStyle(this.router1On ? 0x00ff00 : 0xff0000);
         this.router2PowerBtn.setFillStyle(this.router2On ? 0x00ff00 : 0xff0000);
     }
@@ -751,22 +850,20 @@ class ServerRackScene extends Phaser.Scene {
     checkSolution() {
         if (this.solved) return;
 
-        const connects = (cable, a, b) => {
-            let ids = [cable.ends.A.portId, cable.ends.B.portId];
-            return ids.includes(a) && ids.includes(b);
-        };
-
-        const redOk = connects(this.cableRed, 'provider_0', 'reserv_0');
-        const y1Ok = connects(this.cableYellow1, 'vipnet_0', 'reserv_1');
-        const y2Ok = connects(this.cableYellow2, 'voip_8', 'reserv_2');
-        const powerOk = !this.router1On && this.router2On;
-
-        // Сохраняем состояние питания в общий sysState, чтобы не терять прогресс,
-        // если игрок выйдет из серверной и вернётся позже.
+        // Сохраняем позиции в стейт-машину на каждое действие!
         if (this.mainScene && this.mainScene.sysState) {
             this.mainScene.sysState.inc3Router1On = this.router1On;
             this.mainScene.sysState.inc3Router2On = this.router2On;
+            this.mainScene.sysState.inc3_red_B = this.cableRed.ends.B.portId;
+            this.mainScene.sysState.inc3_y1_B = this.cableYellow1.ends.B.portId;
+            this.mainScene.sysState.inc3_y2_B = this.cableYellow2.ends.B.portId;
         }
+
+        // Проверяем концы B, так как концы A теперь жестко зафиксированы!
+        const redOk = this.cableRed.ends.B.portId === 'r2_wan_0';
+        const y1Ok = this.cableYellow1.ends.B.portId.startsWith('r2_lan');
+        const y2Ok = this.cableYellow2.ends.B.portId.startsWith('r2_lan');
+        const powerOk = !this.router1On && this.router2On;
 
         if (redOk && y1Ok && y2Ok && powerOk) {
             this.onSolved();
@@ -777,8 +874,8 @@ class ServerRackScene extends Phaser.Scene {
         this.solved = true;
         this.sound.play('dzin');
 
-        this.add.text(640, 690, '✔ Резервный маршрутизатор подключён. Возврат в кабинет...', {
-            font: 'bold 18px Arial', fill: '#00ff00', backgroundColor: '#000000aa', padding: { x: 10, y: 8 }
+        this.add.text(640, 690, '✔ Трафик переведен. Резервный маршрутизатор запущен!', {
+            font: 'bold 18px Arial', fill: '#00ff00', backgroundColor: '#000000aa', padding: { x: 15, y: 10 }
         }).setOrigin(0.5).setDepth(300);
 
         this.router1PowerBtn.disableInteractive();
@@ -788,21 +885,14 @@ class ServerRackScene extends Phaser.Scene {
             if (c.endBHandle) c.endBHandle.disableInteractive();
         });
 
-        this.time.delayedCall(1800, () => {
+        this.time.delayedCall(2000, () => {
             this.cameras.main.fadeOut(500, 0, 0, 0);
             this.cameras.main.once('camerafadeoutcomplete', () => {
                 this.scene.wake('MainWorkspaceScene');
-                let mainScene = this.scene.get('MainWorkspaceScene');
-                if (mainScene) {
-                    if (mainScene.cameras && mainScene.cameras.main) {
-                        mainScene.cameras.main.fadeIn(500, 0, 0, 0);
-                    }
-                    if (mainScene.sysState) {
-                        mainScene.sysState.progress = GAME_STAGE.INC3_CHECKING;
-                    }
-                    if (typeof mainScene.checkTerminalProgress === 'function') {
-                        mainScene.checkTerminalProgress();
-                    }
+                if (this.mainScene) {
+                    if (this.mainScene.cameras && this.mainScene.cameras.main) this.mainScene.cameras.main.fadeIn(500, 0, 0, 0);
+                    if (this.mainScene.sysState) this.mainScene.sysState.progress = GAME_STAGE.INC3_CHECKING;
+                    if (typeof this.mainScene.checkTerminalProgress === 'function') this.mainScene.checkTerminalProgress();
                 }
                 this.scene.stop('ServerRackScene');
             });
@@ -840,7 +930,8 @@ class MainWorkspaceScene extends Phaser.Scene {
             'Гл. Бухгалтер': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
             'Директор': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
             'Магистр': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
-            'Жорик': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false }
+            'Жорик': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false },
+            'Общий чат': { history: '', queue: [], hintBought: false, isTyping: false, waitingForNext: false }
         };
 
         this.scoreText = this.add.text(30, 30, 'Баллы: ' + this.totalScore, { font: 'bold 24px Arial', fill: '#ffff00' }).setOrigin(0, 0).setDepth(20);
@@ -875,61 +966,25 @@ class MainWorkspaceScene extends Phaser.Scene {
         boardContainer.add([shadowK, board, bgWhiteK, line1K, line2K, line3K, header1K, header2K, header3K, header4K, note1K, note2K, note3K, note4K, note5K, note6K, note7K]);
         // ===================================
 
-        // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
-        const book = this.add.container(300, 610).setDepth(2);
-        
-        // --- СОЗДАЕМ ТЕНЬ ---
-        const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
-        bookShadow.setScale(0.5); // Тот же масштаб
-        bookShadow.setTint(0x000000); 
-        bookShadow.setAlpha(0.35); 
-        
-        // --- САМА КНИГА ---
-        const bookImg = this.add.image(0, 0, 'spravochnik');
-        let baseScale = 0.5; 
-        bookImg.setScale(baseScale);
-        
-        // Добавляем тень ПЕРВОЙ в контейнер, чтобы она была под картинкой
-        book.add([bookShadow, bookImg]);
-        
-        // Автоматически вычисляем зону для клика на основе финального размера картинки
-        const hitW = bookImg.displayWidth;
-        const hitH = bookImg.displayHeight;
-        book.setInteractive(new Phaser.Geom.Rectangle(-hitW/2, -hitH/2, hitW, hitH), Phaser.Geom.Rectangle.Contains);
-        book.input.cursor = 'pointer';
-        // ===================================
-        // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
-        const networkMap = this.add.container(580, 610).setDepth(2);
-        
-        // --- СОЗДАЕМ ТЕНЬ ---
-        const mapShadow = this.add.image(5, 7, 'shemaseti'); // Сдвиг (5, 7)
-        mapShadow.setScale(0.4);
-        mapShadow.setTint(0x000000);
-        mapShadow.setAlpha(0.35);
-        
-        // --- САМА СХЕМА ---
-        const mapImg = this.add.image(0, 0, 'shemaseti');
-        let mapBaseScale = 0.4; 
-        mapImg.setScale(mapBaseScale);
-        
-        // Добавляем тень ПЕРВОЙ в контейнер
-        networkMap.add([mapShadow, mapImg]);
-        
-        // Автоматически вычисляем зону для клика
-        const mapHitW = mapImg.displayWidth;
-        const mapHitH = mapImg.displayHeight;
-        networkMap.setInteractive(new Phaser.Geom.Rectangle(-mapHitW/2, -mapHitH/2, mapHitW, mapHitH), Phaser.Geom.Rectangle.Contains);
-        networkMap.input.cursor = 'pointer';
-        // ===================================
+        const book = this.add.container(150, 610).setDepth(2);
+        const bookBg = this.add.rectangle(0, 0, 140, 100, 0x2b2b2b).setStrokeStyle(2, 0x555555);
+        const bookSpine = this.add.rectangle(-60, 0, 20, 100, 0x1a1a1a); 
+        const bookText = this.add.text(10, 0, 'СПРАВОЧНИК', { font: 'bold 16px Courier', fill: '#cccccc' }).setOrigin(0.5);
+        book.add([bookBg, bookSpine, bookText]);
+        book.setInteractive(new Phaser.Geom.Rectangle(-70, -50, 140, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
 
-        // При наведении мыши книга чуть увеличивается (+5%)
-        book.on('pointerover', () => { bookImg.setScale(baseScale + 0.05); });
-        // При отведении возвращается к базовому размеру
-        book.on('pointerout', () => { bookImg.setScale(baseScale); });
-        // При наведении мыши схема чуть увеличивается (+5%)
-        networkMap.on('pointerover', () => { mapImg.setScale(mapBaseScale + 0.05); });
-        // При отведении возвращается к базовому размеру
-        networkMap.on('pointerout', () => { mapImg.setScale(mapBaseScale); });
+        const networkMap = this.add.container(320, 610).setDepth(2);
+        const mapBg = this.add.rectangle(0, 0, 160, 100, 0x0a1910).setStrokeStyle(2, 0x00aa00);
+        const mapTextHeader = this.add.text(0, -15, 'СХЕМА СЕТИ', { font: 'bold 18px Courier', fill: '#00ff00' }).setOrigin(0.5);
+        const mapTextIP = this.add.text(0, 20, '192.168.8.x', { font: '14px Courier', fill: '#008800' }).setOrigin(0.5);
+        networkMap.add([mapBg, mapTextHeader, mapTextIP]);
+        networkMap.setInteractive(new Phaser.Geom.Rectangle(-80, -50, 160, 100), Phaser.Geom.Rectangle.Contains).input.cursor = 'pointer';
+
+        book.on('pointerover', () => { bookBg.setStrokeStyle(2, 0xffa500); bookText.setColor('#ffa500'); });
+        book.on('pointerout', () => { bookBg.setStrokeStyle(2, 0x555555); bookText.setColor('#cccccc'); });
+        
+        networkMap.on('pointerover', () => { mapBg.setStrokeStyle(2, 0xffffff); mapTextHeader.setColor('#ffffff'); });
+        networkMap.on('pointerout', () => { mapBg.setStrokeStyle(2, 0x00aa00); mapTextHeader.setColor('#00ff00'); });
 
         this.phoneObj = this.add.container(1200, 620);
         this.phoneObj.add([
@@ -1006,13 +1061,104 @@ class MainWorkspaceScene extends Phaser.Scene {
         });
 
         this.startWorkingDay();
+
+
+        
+        // === ПАНЕЛЬ ДЛЯ ТЕСТИРОВАНИЯ (ДЕБАГ МЕНЮ) ===
+        let debugBtn = this.add.text(20, 150, '⚙️ ТЕСТ', {
+            font: '14px Arial', fill: '#ffffff', backgroundColor: '#aa0000', padding: { x: 10, y: 10 }
+        }).setInteractive({ useHandCursor: true }).setDepth(200);
+
+        this.debugMenu = this.add.container(95, 150).setDepth(200).setVisible(false);
+        let debugBg = this.add.rectangle(0, 0, 140, 150, 0x2b2b2b).setOrigin(0, 0).setStrokeStyle(2, 0x555555);
+        
+        let btnLvl1 = this.add.text(15, 20, '▶ Уровень 1', { font: '16px Arial', fill: '#00ff00' }).setInteractive({ useHandCursor: true });
+        let btnLvl2 = this.add.text(15, 60, '▶ Уровень 2', { font: '16px Arial', fill: '#00ff00' }).setInteractive({ useHandCursor: true });
+        let btnLvl3 = this.add.text(15, 100, '▶ Уровень 3', { font: '16px Arial', fill: '#00ff00' }).setInteractive({ useHandCursor: true });
+        let btnCloseDebug = this.add.text(115, 5, '✖', { font: '14px Arial', fill: '#ff5555' }).setInteractive({ useHandCursor: true });
+
+        this.debugMenu.add([debugBg, btnLvl1, btnLvl2, btnLvl3, btnCloseDebug]);
+
+        // Логика открытия/закрытия
+        debugBtn.on('pointerdown', () => this.debugMenu.setVisible(!this.debugMenu.visible));
+        btnCloseDebug.on('pointerdown', () => this.debugMenu.setVisible(false));
+        // Логика кнопок уровней
+        btnLvl1.on('pointerdown', () => this.jumpToLevel(1));
+        btnLvl2.on('pointerdown', () => this.jumpToLevel(2));
+        btnLvl3.on('pointerdown', () => this.jumpToLevel(3));
+        // ============================================
     }
 
     startWorkingDay() {
         this.time.delayedCall(1000, () => this.showToast('💬 Вы: Фух, начался первый рабочий день...'));
         this.time.delayedCall(6500, () => this.showToast('💬 Вы: Надо бы заглянуть в справочник.'));
     }
+jumpToLevel(level) {
+        this.debugMenu.setVisible(false);
+        this.sound.play('openClick');
+        
+        // 1. Сбрасываем терминал (если уже что-то вводили)
+        if (this.vTerm) {
+            this.vTerm.keslStarted = false;
+            this.vTerm.isSSH = false;
+            this.vTerm.currentPath = '/home/sysadmin';
+            this.vTerm.term.write('\r\n[SYSTEM] Терминал сброшен.\r\n' + this.vTerm.getPrompt());
+        }
 
+        // 2. Очищаем историю всех чатов для чистого старта уровня
+        for (let key in this.chatData) {
+            this.chatData[key].history = '';
+            this.chatData[key].queue = [];
+            this.chatData[key].isTyping = false;
+            this.chatData[key].waitingForNext = false;
+            this.chatData[key].hintBought = false;
+        }
+
+        // 3. Сбрасываем визуальные статусы (кружочки) в телефонной книге
+        this.accStatus.setText('Гл. Бухгалтер ⚪').setFill('#888888');
+        this.dirStatus.setText('Директор ⚪').setFill('#888888');
+        this.generalChatStatus.setText('Общий чат ⚪').setFill('#888888');
+        this.guruStatus.setText('Магистр ⚪').setFill('#888888');
+        this.antiGuruStatus.setText('Жорик ⚪').setFill('#888888');
+
+        // 4. Подготавливаем стейт-машину под конкретный уровень
+        if (level === 1) {
+            this.sysState.progress = GAME_STAGE.INTRO;
+            this.sysState.handbookRead = true; // Сразу "читаем" справочник, чтобы не отвлекал
+            this.phoneShake.resume();
+            this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555'); 
+            this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.intro];
+            this.showToast('🛠 ПЕРЕХОД: Уровень 1 (Коммутатор)');
+        } 
+        else if (level === 2) {
+            this.sysState.progress = GAME_STAGE.DIR_INTRO;
+            this.sysState.pingYaRuDone = false;
+            this.phoneShake.resume();
+            this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
+            this.chatData['Директор'].queue = [...DIALOGS.director.intro, 'Админ: Уже смотрю.'];
+            this.showToast('🛠 ПЕРЕХОД: Уровень 2 (Антивирус)');
+        } 
+        else if (level === 3) {
+            this.sysState.progress = GAME_STAGE.INC3_INTRO;
+            this.sysState.inc3PingFailedDone = false;
+            this.sysState.inc3Router1On = true;
+            this.sysState.inc3Router2On = false;
+            this.phoneShake.resume();
+            this.generalChatStatus.setText('Общий чат 🔴').setFill('#ff5555');
+            this.chatData['Общий чат'].queue = [...DIALOGS.generalChat.intro];
+            this.showToast('🛠 ПЕРЕХОД: Уровень 3 (Отвал сети)');
+        }
+
+        // 5. Проматываем Канбан-доску. 
+        // Если прыгаем на 3 уровень, 1 и 2 задания автоматом прыгнут в "Готово"
+        this.updateKanbanBoard();
+        
+        // 6. Если мы нажали кнопку дебага, пока сидели в телефоне — обновляем чат на лету
+        if (this.overlayPhone.visible && this.activeContact) {
+            this.renderChat();
+            this.processChatQueue(this.activeContact);
+        }
+    }
     showToast(msg) {
         if (this.currentToast) {
             this.currentToast.destroy();
@@ -1087,20 +1233,17 @@ class MainWorkspaceScene extends Phaser.Scene {
             this.time.delayedCall(800, () => this.showToast('💬 Вы: Хм, нужно сходить в серверную...'));
         }
 
-        // Инцидент 3: сервeрная почтчена (переключение на резерв), ServerRackScene выставила
-        // progress = INC3_CHECKING и дёрнула этот метод - queue-им реплики обеим сторонам.
+        // Инцидент 3: серверная починена (переключение на резерв), ServerRackScene выставила
+        // progress = INC3_CHECKING и дёрнула этот метод - пишем в общий чат компании.
         if (this.sysState.progress === GAME_STAGE.INC3_CHECKING) {
             this.playDing();
-            this.showToast('Интернет восстановлен! Сообщите об этом в чате.');
+            this.showToast('Интернет восстановлен! Сообщите об этом в общем чате.');
 
-            this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555');
-            this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
-            this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.inc3_outro];
-            this.chatData['Директор'].queue = [...DIALOGS.director.inc3_outro];
+            this.generalChatStatus.setText('Общий чат 🔴').setFill('#ff5555');
+            this.chatData['Общий чат'].queue = [...DIALOGS.generalChat.outro];
             this.updateKanbanBoard();
 
-            if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') this.processChatQueue('Гл. Бухгалтер');
-            if (this.overlayPhone.visible && this.activeContact === 'Директор') this.processChatQueue('Директор');
+            if (this.overlayPhone.visible && this.activeContact === 'Общий чат') this.processChatQueue('Общий чат');
         }
     }
 
@@ -1442,9 +1585,14 @@ class MainWorkspaceScene extends Phaser.Scene {
             .contact-item:hover { background: #202e3d; }
             .contact-ava { width: 54px; height: 54px; border-radius: 50%; margin-right: 15px; border: 2px solid; flex-shrink: 0; overflow: hidden; position: relative; }
             .contact-ava-img { position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-size: cover; background-position: center; }
+            .contact-ava-icon { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; background: #2b3e51; }
             .contact-name { font-size: 18px; font-weight: bold; }
         </style>
         <div class="contact-list-container">
+            <div class="contact-item" id="btn-general">
+                <div class="contact-ava" style="border-color: #6ab2f2;"><div class="contact-ava-icon">👥</div></div>
+                <div class="contact-name" id="status-general" style="color: #888888;">Общий чат ⚪</div>
+            </div>
             <div class="contact-item" id="btn-magistr">
                 <div class="contact-ava" style="border-color: #4fc3f7;"><div class="contact-ava-img" style="background-image: url('assets/images/magistr.png');"></div></div>
                 <div class="contact-name" id="status-magistr" style="color: #888888;">Магистр ⚪</div>
@@ -1465,16 +1613,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         `;
         
         // Размещаем HTML ровно поверх левой панели телефона.
-        // Разделитель под шапкой "КОНТАКТЫ" находится на y=120, блок из 4 карточек
-        // высотой 75px каждая (итого 300px) должен начинаться сразу под ним,
-        // поэтому центр блока = 120 + 300/2 = 270.
-        this.contactsDOM = this.add.dom(290, 270).createFromHTML(html).setVisible(false);
+        // Разделитель под шапкой "КОНТАКТЫ" находится на y=120, блок теперь из 5 карточек
+        // высотой 75px каждая (итого 375px) должен начинаться сразу под ним,
+        // поэтому центр блока = 120 + 375/2 = 307.5.
+        this.contactsDOM = this.add.dom(290, 308).createFromHTML(html).setVisible(false);
         
         // Вешаем слушатель кликов браузера
         this.contactsDOM.addListener('click');
         this.contactsDOM.on('click', (event) => {
             let item = event.target.closest('.contact-item');
             if (!item) return;
+            if (item.id === 'btn-general') this.openChat('Общий чат');
             if (item.id === 'btn-magistr') this.openChat('Магистр');
             if (item.id === 'btn-jora') this.openChat('Жорик');
             if (item.id === 'btn-acc') this.openChat('Гл. Бухгалтер');
@@ -1493,6 +1642,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         this.antiGuruStatus = createStatusWrapper('status-jora');
         this.accStatus = createStatusWrapper('status-acc');
         this.dirStatus = createStatusWrapper('status-dir');
+        this.generalChatStatus = createStatusWrapper('status-general');
     }
 
     openChat(contactName) {
@@ -1597,6 +1747,8 @@ class MainWorkspaceScene extends Phaser.Scene {
         
         if (senderName === 'Гл. Бухгалтер') { avatarImgPath = 'assets/images/buhgalter.png'; avatarColor = '#e57373'; }
         else if (senderName === 'Директор') { avatarImgPath = 'assets/images/director.png'; avatarColor = '#ba68c8'; }
+        else if (senderName === 'Секретарь') { avatarColor = '#4db6ac'; } // своей картинки пока нет - у Арины будет отдельная задача
+        else if (senderName === 'Бухгалтер 1') { avatarColor = '#90a4ae'; } // своей картинки пока нет
         else if (senderName === 'Магистр') { avatarImgPath = 'assets/images/magistr.png'; avatarColor = '#4fc3f7'; }
         else if (senderName === 'Жорик') { avatarImgPath = 'assets/images/jora.png'; avatarColor = '#ff8a65'; }
 
@@ -1636,11 +1788,15 @@ class MainWorkspaceScene extends Phaser.Scene {
 
     finishDialog(contactName) {
         let data = this.chatData[contactName];
-        if (contactName === 'Гл. Бухгалтер' && (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING || this.sysState.progress === GAME_STAGE.INC3_INTRO || this.sysState.progress === GAME_STAGE.INC3_CHECKING)) {
+        if (contactName === 'Гл. Бухгалтер' && (this.sysState.progress === GAME_STAGE.INTRO || this.sysState.progress === GAME_STAGE.CHECKING)) {
             data.waitingForNext = true;
             this.renderChat();
         }
-        if (contactName === 'Директор' && (this.sysState.progress === GAME_STAGE.DIR_INTRO || this.sysState.progress === GAME_STAGE.DIR_CHECKING || this.sysState.progress === GAME_STAGE.INC3_INTRO || this.sysState.progress === GAME_STAGE.INC3_CHECKING)) {
+        if (contactName === 'Директор' && (this.sysState.progress === GAME_STAGE.DIR_INTRO || this.sysState.progress === GAME_STAGE.DIR_CHECKING)) {
+            data.waitingForNext = true;
+            this.renderChat();
+        }
+        if (contactName === 'Общий чат' && (this.sysState.progress === GAME_STAGE.INC3_INTRO || this.sysState.progress === GAME_STAGE.INC3_CHECKING)) {
             data.waitingForNext = true;
             this.renderChat();
         }
@@ -1685,14 +1841,6 @@ class MainWorkspaceScene extends Phaser.Scene {
                         this.processChatQueue('Директор');
                     }
                 });
-            } else if (this.sysState.progress === GAME_STAGE.INC3_INTRO) {
-                this.sysState.progress = GAME_STAGE.INC3_TASK_RECEIVED;
-                this.showToast('Проверь задачи на доске и возьми задачу в работу');
-                this.playDing();
-                this.updateKanbanBoard();
-                this.renderChat();
-            } else if (this.sysState.progress === GAME_STAGE.INC3_CHECKING) {
-                this.finishIncident3(data);
             }
         }
 
@@ -1724,45 +1872,33 @@ class MainWorkspaceScene extends Phaser.Scene {
                     this.guruStatus.setText('Магистр ⚪').setFill('#888888');
                     this.antiGuruStatus.setText('Жорик ⚪').setFill('#888888');
 
-                    this.accStatus.setText('Гл. Бухгалтер 🔴').setFill('#ff5555');
-                    this.dirStatus.setText('Директор 🔴').setFill('#ff5555');
+                    this.generalChatStatus.setText('Общий чат 🔴').setFill('#ff5555');
+                    this.chatData['Общий чат'].queue = [...DIALOGS.generalChat.intro];
 
-                    this.chatData['Гл. Бухгалтер'].queue = [...DIALOGS.accountant.inc3_intro];
-                    this.chatData['Директор'].queue = [...DIALOGS.director.inc3_intro];
-
-                    if (this.overlayPhone.visible && this.activeContact === 'Гл. Бухгалтер') {
-                        this.processChatQueue('Гл. Бухгалтер');
-                    }
-                    if (this.overlayPhone.visible && this.activeContact === 'Директор') {
-                        this.processChatQueue('Директор');
+                    if (this.overlayPhone.visible && this.activeContact === 'Общий чат') {
+                        this.processChatQueue('Общий чат');
                     }
                 });
-            } else if (this.sysState.progress === GAME_STAGE.INC3_INTRO) {
+            }
+        }
+
+        if (contactName === 'Общий чат') {
+            if (this.sysState.progress === GAME_STAGE.INC3_INTRO) {
                 this.sysState.progress = GAME_STAGE.INC3_TASK_RECEIVED;
                 this.showToast('Проверь задачи на доске и возьми задачу в работу');
                 this.playDing();
                 this.updateKanbanBoard();
                 this.renderChat();
             } else if (this.sysState.progress === GAME_STAGE.INC3_CHECKING) {
-                this.finishIncident3(data);
+                this.sysState.progress = GAME_STAGE.INC3_FINISHED;
+                this.showToast('Задание 3 успешно выполнено! Интернет восстановлен во всей компании.');
+                this.playDing();
+                data.history = '[ Чат заархивирован. Задание успешно выполнено. ]';
+                this.generalChatStatus.setText('Общий чат ⚪').setFill('#888888');
+                this.renderChat();
+                this.updateKanbanBoard();
             }
         }
-    }
-
-    // Общее завершение 3 задания - вызывается той стороной чата (Бухгалтер или Директор),
-    // чью реплику игрок прочитает первой. Архивируем оба чата разом, т.к. инцидент общий для всех.
-    finishIncident3(data) {
-        this.sysState.progress = GAME_STAGE.INC3_FINISHED;
-        this.showToast('Задание 3 успешно выполнено! Интернет восстановлен во всей компании.');
-        this.playDing();
-        this.chatData['Гл. Бухгалтер'].history = '[ Чат заархивирован. Задание успешно выполнено. ]';
-        this.chatData['Директор'].history = '[ Чат заархивирован. Задание успешно выполнено. ]';
-        this.chatData['Гл. Бухгалтер'].queue = [];
-        this.chatData['Директор'].queue = [];
-        this.accStatus.setText('Гл. Бухгалтер ⚪').setFill('#888888');
-        this.dirStatus.setText('Директор ⚪').setFill('#888888');
-        this.renderChat();
-        this.updateKanbanBoard();
     }
 
     shutdown() {
