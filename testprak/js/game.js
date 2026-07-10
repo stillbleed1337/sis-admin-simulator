@@ -21,8 +21,13 @@ class BootScene extends Phaser.Scene {
         this.load.image('barmen', 'assets/images/barmen.png');
         this.load.image('bg_loading', 'assets/images/zagruz.png');
         this.load.image('btn_start', 'assets/images/button-start.png');
-        // === ДОБАВЛЯЕМ ЗАГРУЗКУ ЗАГОЛОВКА ===
         this.load.image('title_img', 'assets/images/hroniki.png');
+
+        // === ИСПРАВЛЕНИЕ: ДОБАВЛЕНЫ ИКОНКИ РАБОЧЕГО СТОЛА ===
+        this.load.image('spravochnik', 'assets/images/spravochnik.png');
+        this.load.image('shemaseti', 'assets/images/shemaseti.png');
+        // =====================================================
+
         // --- АВАТАРКИ ПЕРСОНАЖЕЙ ---
         this.load.image('ava_director', 'assets/images/director.png');
         this.load.image('ava_buhgalter', 'assets/images/buhgalter.png');
