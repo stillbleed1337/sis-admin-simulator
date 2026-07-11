@@ -1009,9 +1009,9 @@ class MainWorkspaceScene extends Phaser.Scene {
         // ===================================
 
         // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
-        const book = this.add.container(120, 610).setDepth(2);
+        const book = this.add.container(105, 610).setDepth(2);
 
-        let baseScale = 0.28;
+        let baseScale = 0.33;
 
         // --- СОЗДАЕМ ТЕНЬ ---
         const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
@@ -1133,13 +1133,21 @@ class MainWorkspaceScene extends Phaser.Scene {
 
 
         // Монитор для терминала (Depth 1, под серверной, но над столом)
-        let m1 = this.add.rectangle(830, 300, 780, 480, 0x111111).setDepth(1).setStrokeStyle(4, 0x333333);
-        let m2 = this.add.rectangle(830, 560, 150, 40, 0x111111).setDepth(1);
-        let m3 = this.add.rectangle(830, 580, 250, 20, 0x111111).setDepth(1);
-        let mShadow = this.add.rectangle(830, 595, 270, 15, 0x000000, 0.6).setDepth(1);
+        // Улучшенный дизайн терминального монитора
+        let m1 = this.add.rectangle(800, 280, 780, 480, 0x111111).setDepth(1).setStrokeStyle(4, 0x333333);
+        // Нижняя рамка монитора, где будет надпись "sys-admin"
+        let mBezelBottom = this.add.rectangle(800, 510, 775, 20, 0x1a1d21).setDepth(1);
+        let monitorLogo = this.add.text(800, 510, 'SYS-ADMIN', { font: 'bold 13px monospace', fill: '#555555', letterSpacing: 2 }).setOrigin(0.5).setDepth(1);
+        let monitorLed = this.add.circle(1170, 510, 3, 0x00ff00).setDepth(1);
 
-        let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px 25px 15px 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
-        this.terminalDOM = this.add.dom(830, 300).createFromHTML(termHTML);
+        // Стойка монитора
+        let m2 = this.add.rectangle(800, 540, 60, 40, 0x15181a).setDepth(1);
+        let m3 = this.add.rectangle(800, 565, 260, 15, 0x111111).setDepth(1);
+        let mShadow1 = this.add.ellipse(800, 572, 280, 20, 0x000000, 0.4).setDepth(1);
+        let mShadow2 = this.add.ellipse(800, 575, 300, 30, 0x000000, 0.2).setDepth(1);
+
+        let termHTML = '<div id="terminal-container" style="width: 760px; height: 440px; background-color: #050505; padding: 15px; border: 2px solid #222; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); overflow: hidden; user-select: text; box-sizing: border-box; border-radius: 4px;"></div>';
+        this.terminalDOM = this.add.dom(800, 280).createFromHTML(termHTML);
 
         if (typeof Terminal !== 'undefined') {
             let xterm = new Terminal({ cursorBlink: true, cols: 74, theme: { background: '#000000' } });
@@ -1509,14 +1517,14 @@ class MainWorkspaceScene extends Phaser.Scene {
                 <div class="book-section" style="border-left-color: #ff8a65;">
                     <h3>🧙‍♂️ ПОМОЩЬ ЭКСПЕРТОВ</h3>
                     <div class="colleague-card">
-                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #ff8a65; overflow: hidden; position: relative;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/jora.png'); background-size: cover; background-position: center;"></div></div>
+                        <img src="assets/images/jora.png" class="colleague-avatar" style="border: 2px solid #ff8a65;" alt="Жорик">
                         <div class="colleague-info">
                             <h4>Жорик <span class="badge-penalty" style="background: rgba(249, 115, 22, 0.15); color: #ffb74d; border-color: rgba(249, 115, 22, 0.3);">Минус 5 баллов</span></h4>
                             <p>Весельчак и душа компании. Отлично шарит в компьютерах, но часто подходит к работе слишком легкомысленно.</p>
                         </div>
                     </div>
                     <div class="colleague-card">
-                        <div class="colleague-avatar" style="width: 72px; height: 72px; border: 2px solid #4fc3f7; overflow: hidden; position: relative;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/magistr.png'); background-size: cover; background-position: center;"></div></div>
+                        <img src="assets/images/magistr.png" class="colleague-avatar" style="border: 2px solid #4fc3f7;" alt="Магистр">
                         <div class="colleague-info">
                             <h4>Магистр <span class="badge-penalty">Минус 10 баллов</span></h4>
                             <p>Строгий профессионал, мастер своего дела. Знает архитектуру систем наизусть.</p>
@@ -1704,7 +1712,7 @@ class MainWorkspaceScene extends Phaser.Scene {
         let element = document.getElementById('chat-body');
         if (!element || !data) return;
 
-        let typingIndicator = data.isTyping ? '\n\n<span style="color:#8b9eb0; font-style:italic;">печатает...</span>' : '';
+        let typingIndicator = data.isTyping ? '\n\n<div class="typing-indicator"><span></span><span></span><span></span></div>' : '';
         element.innerHTML = this.buildChatHTML(data) + typingIndicator;
 
         try { element.scrollTop = element.scrollHeight; } catch (e) { }
@@ -1754,8 +1762,22 @@ class MainWorkspaceScene extends Phaser.Scene {
 
         let directionClass = isOutgoing ? 'right' : 'left';
 
+        let avatarHTML = '';
+        if (!isOutgoing) {
+            let avatarFile = 'assets/images/obshchat.png';
+            if (senderName.includes('Магистр')) avatarFile = 'assets/images/magistr.png';
+            else if (senderName.includes('Жорик') || senderName.includes('Жора')) avatarFile = 'assets/images/jora.png';
+            else if (senderName.includes('Главный бухгалтер') || senderName.includes('Гл. Бухгалтер')) avatarFile = 'assets/images/buhgalter.png';
+            else if (senderName.includes('Бухгалтер 1') || senderName.includes('Бух 1')) avatarFile = 'assets/images/buhgalter1.png';
+            else if (senderName.includes('Секретарь')) avatarFile = 'assets/images/sekretar.png';
+            else if (senderName.includes('Директор')) avatarFile = 'assets/images/director.png';
+
+            avatarHTML = `<img src="${avatarFile}" class="chat-msg-avatar" alt="avatar">`;
+        }
+
         return `
         <div class="msg-wrapper ${directionClass}">
+            ${avatarHTML}
             <div class="msg-bubble ${directionClass}">
                 ${text}
             </div>
@@ -1918,3 +1940,9 @@ const config = {
     scene: [BootScene, LoadingScene, IntroScene, MainWorkspaceScene, ServerRackScene, UIScene]
 };
 const game = new Phaser.Game(config);
+
+
+
+
+
+
