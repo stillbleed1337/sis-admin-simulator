@@ -7,6 +7,7 @@ class BootScene extends Phaser.Scene {
     
     preload() {
         // --- КАРТИНКИ ---
+        this.load.html('phoneUI', 'phone.html');
         this.load.image('fon', 'assets/images/fon.png');
         this.load.image('network_map', 'assets/images/network_map.png');
         this.load.image('blue2', 'assets/images/blue2.png');
@@ -599,6 +600,17 @@ class ServerRackScene extends Phaser.Scene {
 
         createDevice(790, 160, 250, 55, 0x282c2f, 'Маршрутизатор 2 (РЕЗЕРВ)');
         this.router2PowerBtn = createPowerBtn(680, 172);
+
+        // --- Восстановление фичей ---
+        this.router1PowerBtn.setFillStyle(0x808080);
+        this.router1PowerBtn.disableInteractive();
+        
+        let r1Ind = this.add.circle(410, 172, 4, 0xff0000).setDepth(2);
+        this.tweens.add({
+            targets: r1Ind, alpha: 0.2, duration: 500, yoyo: true, repeat: -1
+        });
+        
+        
         addPortGroup(750, 172, 4, 20, 0xffeb3b, 'r2_lan'); 
         addPortGroup(845, 172, 1, 20, 0x03a9f4, 'r2_wan'); 
 
@@ -637,6 +649,9 @@ class ServerRackScene extends Phaser.Scene {
         
         this.createCable('green_sw1', 0x66bb6a, 'vipnet_0', 'sw1a_0', 'none', 'orthogonal', decoWireIndex++);
         this.createCable('green_sw2', 0x66bb6a, 'vipnet_1', 'sw2a_0', 'none', 'orthogonal', decoWireIndex++);
+        for (let i = 0; i < 3; i++) {
+            this.createCable(`red_pp1_${i}`, 0xff0000, `pp1_${23 - i}`, `sw1b_${23 - i}`, 'none', 'zmeika', i);
+        }
 
         // ИНТЕРАКТИВНЫЕ КАБЕЛИ ДЛЯ ЗАДАНИЯ
         // Теперь параметр 'B' означает, что только конец B (подключенный к Маршрутизатору) можно дергать мышой!
@@ -767,7 +782,16 @@ class ServerRackScene extends Phaser.Scene {
         cable.graphics.beginPath();
         cable.graphics.moveTo(pA.x, pA.y + offsetY);
 
-        if (cable.routingStyle === 'orthogonal' && !cable.dragging && !liveEnd) {
+        if (cable.routingStyle === 'zmeika' && !cable.dragging && !liveEnd) {
+            let dropOffset = 25 + (cable.index * 5); // чуть вниз
+            let rightShift = 880 - (cable.index * 10); // направо в дальние порты
+            
+            cable.graphics.lineTo(pA.x, pA.y + dropOffset + offsetY);
+            cable.graphics.lineTo(rightShift, pA.y + dropOffset + offsetY);
+            cable.graphics.lineTo(rightShift, pB.y - 15 + offsetY);
+            cable.graphics.lineTo(pB.x, pB.y - 15 + offsetY);
+            cable.graphics.lineTo(pB.x, pB.y + offsetY);
+        } else if (cable.routingStyle === 'orthogonal' && !cable.dragging && !liveEnd) {
             let isLeftSide = (pA.x + pB.x) / 2 < 640;
             let sideXBase = isLeftSide ? 330 : 950;
             let sideX = sideXBase + (isLeftSide ? -(cable.index * 3) : (cable.index * 3)); 
@@ -877,7 +901,7 @@ class ServerRackScene extends Phaser.Scene {
         const redOk = this.cableRed.ends.B.portId === 'r2_wan_0';
         const y1Ok = this.cableYellow1.ends.B.portId.startsWith('r2_lan');
         const y2Ok = this.cableYellow2.ends.B.portId.startsWith('r2_lan');
-        const powerOk = !this.router1On && this.router2On;
+        const powerOk = this.router2On;
 
         if (redOk && y1Ok && y2Ok && powerOk) {
             this.onSolved();
@@ -981,17 +1005,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         // ===================================
 
         // === ВИЗУАЛ НОВОГО СПРАВОЧНИКА ===
-        const book = this.add.container(300, 610).setDepth(2);
+        const book = this.add.container(120, 610).setDepth(2);
         
         // --- СОЗДАЕМ ТЕНЬ ---
         const bookShadow = this.add.image(6, 8, 'spravochnik'); // Сдвиг (6, 8)
-        bookShadow.setScale(0.5); // Тот же масштаб
+        bookShadow.setScale(0.3); // Тот же масштаб
         bookShadow.setTint(0x000000); 
         bookShadow.setAlpha(0.35); 
         
         // --- САМА КНИГА ---
         const bookImg = this.add.image(0, 0, 'spravochnik');
-        let baseScale = 0.5; 
+        let baseScale = 0.3; 
         bookImg.setScale(baseScale);
         
         // Добавляем тень ПЕРВОЙ в контейнер, чтобы она была под картинкой
@@ -1004,17 +1028,17 @@ class MainWorkspaceScene extends Phaser.Scene {
         book.input.cursor = 'pointer';
         // ===================================
         // === ВИЗУАЛ НОВОЙ СХЕМЫ СЕТИ ===
-        const networkMap = this.add.container(580, 610).setDepth(2);
+        const networkMap = this.add.container(280, 610).setDepth(2);
         
         // --- СОЗДАЕМ ТЕНЬ ---
         const mapShadow = this.add.image(5, 7, 'shemaseti'); // Сдвиг (5, 7)
-        mapShadow.setScale(0.4);
+        mapShadow.setScale(0.25);
         mapShadow.setTint(0x000000);
         mapShadow.setAlpha(0.35);
         
         // --- САМА СХЕМА ---
         const mapImg = this.add.image(0, 0, 'shemaseti');
-        let mapBaseScale = 0.4; 
+        let mapBaseScale = 0.25; 
         mapImg.setScale(mapBaseScale);
         
         // Добавляем тень ПЕРВОЙ в контейнер
@@ -1085,6 +1109,13 @@ class MainWorkspaceScene extends Phaser.Scene {
             this.tweens.add({ targets: this.bookDOM, scale: 1, y: 0, duration: 400, ease: 'Back.out' });
         });
 
+        
+        // Монитор для терминала (Depth 1, под серверной, но над столом)
+        let m1 = this.add.rectangle(830, 300, 780, 480, 0x111111).setDepth(1).setStrokeStyle(4, 0x333333);
+        let m2 = this.add.rectangle(830, 560, 150, 40, 0x111111).setDepth(1);
+        let m3 = this.add.rectangle(830, 580, 250, 20, 0x111111).setDepth(1);
+        let mShadow = this.add.rectangle(830, 595, 270, 15, 0x000000, 0.6).setDepth(1);
+        
         let termHTML = '<div id="terminal-container" style="width: 750px; height: 450px; background-color: #000; padding: 15px 25px 15px 15px; border: 3px solid #333; overflow: hidden; user-select: text; box-sizing: border-box;"></div>';
         this.terminalDOM = this.add.dom(830, 300).createFromHTML(termHTML);
         
@@ -1594,106 +1625,8 @@ jumpToLevel(level) {
     }
 
     createMessengerUI() {
-        this.overlayPhone = this.add.container(640, 360).setDepth(100).setVisible(false);
-        let bgPhone = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.85).setInteractive();
-        let appBg = this.add.rectangle(0, 0, 1000, 600, 0x0e1621).setStrokeStyle(1, 0x2b3e51); 
-        let leftPanel = this.add.rectangle(-350, 0, 300, 600, 0x17212b); 
-        let chatHeaderBg = this.add.rectangle(150, -270, 700, 60, 0x17212b); 
-        
-        let closePhone = this.add.text(470, -270, '✖', { font: '24px Arial', fill: '#ff5555' }).setOrigin(0.5).setInteractive({ useHandCursor: true });
-        closePhone.on('pointerdown', () => this.closeOverlay(this.overlayPhone));
-
-        this.add.text(-480, -270, 'КОНТАКТЫ', { font: '14px Arial', fill: '#6ab2f2', fontStyle: 'bold' }).setOrigin(0, 0.5);
-        this.add.rectangle(-350, -240, 300, 1, 0x242f3d);
-        
-        this.createContactList(); // Создаст HTML Список контактов поверх левой панели
-        
-        this.chatHeader = this.add.text(-170, -270, 'Выберите чат', { font: '20px Arial', fill: '#ffffff', fontStyle: 'bold' }).setOrigin(0, 0.5);
-        
-        let chatHTML = `<div id="chat-body" style="width: 630px; height: 430px; overflow-y: auto; color: #e4e6eb; font-family: 'Segoe UI', Tahoma, sans-serif; font-size: 16px; padding: 10px 20px; box-sizing: border-box; text-align: left; white-space: pre-wrap;"></div>`;
-        this.chatDOM = this.add.dom(775, 340).createFromHTML(chatHTML).setVisible(false);
-
-        this.chatHintBtn = this.add.text(150, 250, '💡 ВЗЯТЬ ПОДСКАЗКУ', { 
-            font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
-
-        this.chatNextBtn = this.add.text(150, 250, '➤ ДАЛЕЕ', { 
-            font: '14px Arial', fill: '#ffffff', backgroundColor: '#2b5278', padding: { x: 20, y: 10 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setVisible(false);
-
-        this.overlayPhone.add([
-            bgPhone, appBg, leftPanel, chatHeaderBg, closePhone, 
-            this.chatHeader, this.chatHintBtn, this.chatNextBtn
-        ]);
-    }
-
-    // === 4. ЧИСТЫЙ HTML ДЛЯ СПИСКА КОНТАКТОВ ВМЕСТО CANVAS ===
-    createContactList() {
-        let html = `
-        <style>
-            .contact-list-container { width: 300px; padding-top: 10px; font-family: 'Segoe UI', Arial, sans-serif; user-select: none; }
-            .contact-item { display: flex; align-items: center; padding: 10px 20px; cursor: pointer; border-bottom: 1px solid #0e1621; transition: background 0.15s; height: 75px; box-sizing: border-box; }
-            .contact-item:hover { background: #202e3d; }
-            .contact-ava { width: 54px; height: 54px; border-radius: 50%; margin-right: 15px; border: 2px solid; flex-shrink: 0; overflow: hidden; position: relative; }
-            .contact-ava-img { position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-size: cover; background-position: center; }
-            .contact-ava-icon { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; font-size: 24px; background: #2b3e51; }
-            .contact-name { font-size: 18px; font-weight: bold; }
-        </style>
-        <div class="contact-list-container">
-            <div class="contact-item" id="btn-general">
-                <div class="contact-ava" style="border-color: #6ab2f2;"><div class="contact-ava-icon">👥</div></div>
-                <div class="contact-name" id="status-general" style="color: #888888;">Общий чат ⚪</div>
-            </div>
-            <div class="contact-item" id="btn-magistr">
-                <div class="contact-ava" style="border-color: #4fc3f7;"><div class="contact-ava-img" style="background-image: url('assets/images/magistr.png');"></div></div>
-                <div class="contact-name" id="status-magistr" style="color: #888888;">Магистр ⚪</div>
-            </div>
-            <div class="contact-item" id="btn-jora">
-                <div class="contact-ava" style="border-color: #ff8a65;"><div class="contact-ava-img" style="background-image: url('assets/images/jora.png');"></div></div>
-                <div class="contact-name" id="status-jora" style="color: #888888;">Жорик ⚪</div>
-            </div>
-            <div class="contact-item" id="btn-acc">
-                <div class="contact-ava" style="border-color: #e57373;"><div class="contact-ava-img" style="background-image: url('assets/images/buhgalter.png');"></div></div>
-                <div class="contact-name" id="status-acc" style="color: #00ff00;">Гл. Бухгалтер 🟢</div>
-            </div>
-            <div class="contact-item" id="btn-dir">
-                <div class="contact-ava" style="border-color: #ba68c8;"><div class="contact-ava-img" style="background-image: url('assets/images/director.png');"></div></div>
-                <div class="contact-name" id="status-dir" style="color: #888888;">Директор ⚪</div>
-            </div>
-        </div>
-        `;
-        
-        // Размещаем HTML ровно поверх левой панели телефона.
-        // Разделитель под шапкой "КОНТАКТЫ" находится на y=120, блок теперь из 5 карточек
-        // высотой 75px каждая (итого 375px) должен начинаться сразу под ним,
-        // поэтому центр блока = 120 + 375/2 = 307.5.
-        this.contactsDOM = this.add.dom(290, 308).createFromHTML(html).setVisible(false);
-        
-        // Вешаем слушатель кликов браузера
-        this.contactsDOM.addListener('click');
-        this.contactsDOM.on('click', (event) => {
-            let item = event.target.closest('.contact-item');
-            if (!item) return;
-            if (item.id === 'btn-general') this.openChat('Общий чат');
-            if (item.id === 'btn-magistr') this.openChat('Магистр');
-            if (item.id === 'btn-jora') this.openChat('Жорик');
-            if (item.id === 'btn-acc') this.openChat('Гл. Бухгалтер');
-            if (item.id === 'btn-dir') this.openChat('Директор');
-        });
-
-        // УМНЫЕ ОБЕРТКИ: Позволяют старой логике игры менять текст в новом HTML без переписывания кода!
-        const createStatusWrapper = (id) => {
-            return {
-                setText: function(t) { let el = document.getElementById(id); if(el) el.innerText = t; return this; },
-                setFill: function(c) { let el = document.getElementById(id); if(el) el.style.color = c; return this; }
-            };
-        };
-
-        this.guruStatus = createStatusWrapper('status-magistr');
-        this.antiGuruStatus = createStatusWrapper('status-jora');
-        this.accStatus = createStatusWrapper('status-acc');
-        this.dirStatus = createStatusWrapper('status-dir');
-        this.generalChatStatus = createStatusWrapper('status-general');
+        const phone = new PhoneMessenger(this);
+        phone.bindToScene();
     }
 
     openChat(contactName) {
@@ -1783,7 +1716,7 @@ jumpToLevel(level) {
         return htmlContent;
     }
 
-  formatChatMessage(msg) {
+    formatChatMessage(msg) {
         let isOutgoing = msg.startsWith('Админ:');
         let isSystem = msg.startsWith('['); 
         
@@ -1793,24 +1726,18 @@ jumpToLevel(level) {
             if (splitIndex !== -1) { senderName = msg.substring(0, splitIndex); text = msg.substring(splitIndex + 2).trim(); }
         }
 
-        let avatarImgPath = ''; 
-        let avatarColor = '#555555';
-        
-        if (senderName === 'Гл. Бухгалтер') { avatarImgPath = 'assets/images/buhgalter.png'; avatarColor = '#e57373'; }
-        else if (senderName === 'Директор') { avatarImgPath = 'assets/images/director.png'; avatarColor = '#ba68c8'; }
-        else if (senderName === 'Секретарь') { avatarColor = '#4db6ac'; } // своей картинки пока нет - у Арины будет отдельная задача
-        else if (senderName === 'Бухгалтер 1') { avatarColor = '#90a4ae'; } // своей картинки пока нет
-        else if (senderName === 'Магистр') { avatarImgPath = 'assets/images/magistr.png'; avatarColor = '#4fc3f7'; }
-        else if (senderName === 'Жорик') { avatarImgPath = 'assets/images/jora.png'; avatarColor = '#ff8a65'; }
+        if (isSystem) {
+            return `<div style="text-align: center; color: #8b9eb0; margin: 10px 0; font-size: 14px; font-style: italic;">${text}</div>`;
+        }
 
-        // Системные сообщения
-        if (isSystem) return `<div style="text-align: center; margin: 10px 0;"><span style="background: rgba(0,0,0,0.3); padding: 4px 12px; border-radius: 12px; font-size: 13px; color: #8b9eb0;">${text}</span></div>`;
+        let directionClass = isOutgoing ? 'right' : 'left';
         
-        // ИСХОДЯЩИЕ СООБЩЕНИЯ (Аватарка Админа)
-        if (isOutgoing) return `<div style="display: flex; justify-content: flex-end; align-items: flex-end; margin-bottom: 8px;"><div style="background: #2b5278; color: #fff; padding: 10px 14px; border-radius: 16px 16px 0 16px; max-width: 65%; font-size: 16px;">${text}</div><div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid #1e88e5; overflow: hidden; position: relative; flex-shrink: 0; margin-left: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('assets/images/sisadmin.png'); background-size: cover; background-position: center;"></div></div></div>`;
-        
-        // ВХОДЯЩИЕ СООБЩЕНИЯ (Аватарки NPC)
-        return `<div style="display: flex; justify-content: flex-start; align-items: flex-end; margin-bottom: 8px;"><div style="width: 50px; height: 50px; border-radius: 50%; border: 2px solid ${avatarColor}; overflow: hidden; position: relative; flex-shrink: 0; margin-right: 12px;"><div style="position: absolute; top: 50%; left: 50%; width: 145%; height: 145%; transform: translate(-50%, -50%); background-image: url('${avatarImgPath}'); background-size: cover; background-position: center;"></div></div><div style="background: #182533; color: #e4e6eb; padding: 10px 14px; border-radius: 16px 16px 16px 0; max-width: 65%; font-size: 16px; border: 1px solid #22303f;">${text}</div></div>`;
+        return `
+        <div class="msg-wrapper ${directionClass}">
+            <div class="msg-bubble ${directionClass}">
+                ${text}
+            </div>
+        </div>`;
     }
 
     buyHint(data) {
