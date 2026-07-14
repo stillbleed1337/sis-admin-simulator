@@ -336,15 +336,11 @@ class IntroScene extends Phaser.Scene {
             avatarImgEl.style.backgroundImage = "none";
         }
 
-        // === ИЗМЕНЕНИЕ ТУТ: ЛОГИКА ОТОБРАЖЕНИЯ КАРТИНКИ ===
+        // === ИСПРАВЛЕННАЯ ЛОГИКА ОТОБРАЖЕНИЯ ===
         let msg = this.activeMessages[0];
-        if (msg === '[ФОТО wifi роутера]') {
-            textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
-        } else if (msg === '[ФОТО 4-ёх жильного кабеля]') {
-            textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
-        } else {
-            textEl.innerText = msg;
-        }
+        textEl.innerHTML = ''; // Очищаем контейнер перед вставкой
+        
+        this.renderMessageContent(textEl, this.activeMessages[0]);
 
         textEl.style.transform = 'scale(1)';
         textEl.style.opacity = '1';
@@ -363,7 +359,17 @@ class IntroScene extends Phaser.Scene {
             duration: 400, ease: 'Back.out'
         });
     }
-
+    
+    renderMessageContent(element, msg) {
+        element.innerHTML = ''; // Очищаем контейнер от старого контента
+        if (msg.includes('wifi роутера')) {
+            element.innerHTML = '<img src="assets/images/router.png" style="width: 250px; display: block; margin: 10px auto; border-radius: 10px; border: 2px solid #555;">';
+        } else if (msg.includes('жильного кабеля')) {
+            element.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; display: block; margin: 10px auto; border-radius: 10px; border: 2px solid #555;">';
+        } else {
+            element.innerText = msg; // Если это текст, выводим как текст
+        }
+    }
     // === 3. ПЕРЕКЛЮЧЕНИЕ ФРАЗ ===
     advanceDialog() {
         if (this.isDialogClosing) return;
@@ -380,13 +386,10 @@ class IntroScene extends Phaser.Scene {
 
             setTimeout(() => {
                 let nextMsg = this.activeMessages[this.currentMessageIndex];
-                if (nextMsg === '[ФОТО wifi роутера]') {
-                    textEl.innerHTML = '<img src="assets/images/router.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
-                } else if (nextMsg === '[ФОТО 4-ёх жильного кабеля]') {
-                    textEl.innerHTML = '<img src="assets/images/cable.png" style="width: 250px; border-radius: 10px; border: 2px solid #555;">';
-                } else {
-                    textEl.innerText = nextMsg;
-                }
+                
+                // ВМЕСТО СТАРОГО БЛОКА IF/ELSE ВСТАВЬ ЭТО:
+                this.renderMessageContent(textEl, nextMsg);
+                
                 textEl.style.transform = 'scale(1)';
                 textEl.style.opacity = '1';
             }, 150);
@@ -477,8 +480,16 @@ class IntroScene extends Phaser.Scene {
             } else {
                 this.mistakesCount++;
                 if (this.mistakesCount === 1) {
-                    this.score -= GAME_CONFIG.SCORES.mistakePenalty1; this.scoreText.setText('Баллы: ' + this.score);
-                    this.showDialog('Жорик', ['Привет бро, смотри какой роутер купил!', '[ФОТО wifi роутера]', 'Смотри какой стремный кабель мне подкинули...\n[ФОТО 4-ёх жильного кабеля]', 'Давай бро, увидимся на работе.']);
+                    this.score -= GAME_CONFIG.SCORES.mistakePenalty1; 
+                    this.scoreText.setText('Баллы: ' + this.score);
+                    this.showDialog('Жорик', [
+                        'Привет бро, смотри какой роутер купил!',
+                        '[ФОТО wifi роутера]', 
+                        'Смотри какой стремный кабель мне подкинули...', 
+                        '[ФОТО 4-ёх жильного кабеля]', 
+                        'Давай бро, увидимся на работе.'
+                    ]);
+            
                 } else if (this.mistakesCount === 2) {
                     this.score -= GAME_CONFIG.SCORES.mistakePenalty2; this.scoreText.setText('Баллы: ' + this.score);
                     this.showDialog('Магистр', ['Мороженое порекомендовать хочешь ты?', 'Это так же просто, как Ethernet кабель обжать.']);
